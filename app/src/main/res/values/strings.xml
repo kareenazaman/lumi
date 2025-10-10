@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LumiApp</string>
+
+    <string name="login_title">Login</string>
+    <string name="login_sub">Please enter your email &amp; password to login.</string>
+    <string name="email_hint">youremail@gmail.com</string>
+    <string name="password_hint">password</string>
+    <string name="forgot">Forgot Password?</string>
+    <string name="login">Login</string>
+    <string name="no_account">Don\’t have an account?</string>
+
+    <string name="signup_title">Sign Up</string>
+    <string name="signup_sub">Please fill up the form to create a new account.</string>
+    <string name="name_label">Name</string>
+    <string name="name_placeholder">name</string>
+    <string name="email_label">Email</string>
+    <string name="email_placeholder">youremail@gmail.com</string>
+    <string name="phone_label">Phone number</string>
+    <string name="phone_placeholder">phone number</string>
+    <string name="password_label">Password</string>
+    <string name="password_placeholder">password</string>
+    <string name="create_account">Create Account</string>
+    <string name="already_have">Already have an account?</string>
+
+
+</resources>
