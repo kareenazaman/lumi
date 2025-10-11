@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LumiApp">
         <activity
+            android:name=".PMAccSetup"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
