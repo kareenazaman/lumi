@@ -4,11 +4,14 @@
 
     <string name="login_title">Login</string>
     <string name="login_sub">Please enter your email &amp; password to login.</string>
+    <string name="loginemail_label">Email</string>
     <string name="email_hint">youremail@gmail.com</string>
+    <string name="loginpassword_label">Password</string>
     <string name="password_hint">password</string>
     <string name="forgot">Forgot Password?</string>
     <string name="login">Login</string>
-    <string name="no_account">Don\’t have an account?</string>
+    <string name="no_account">Don\'t have an account?</string>
+
 
     <string name="signup_title">Sign Up</string>
     <string name="signup_sub">Please fill up the form to create a new account.</string>
@@ -22,6 +25,54 @@
     <string name="password_placeholder">password</string>
     <string name="create_account">Create Account</string>
     <string name="already_have">Already have an account?</string>
+
+    <!-- Property M Account Setup -->
+    <string name="pm_title">Property Manager</string>
+    <string name="pm_sub">Complete your property management account setup</string>
+    <string name="add_images">add images</string>
+    <string name="property_name">property name</string>
+    <string name="property_type">property type</string>
+    <string name="property_address">property address</string>
+    <string name="renter_capacity">renter capacity</string>
+    <string name="parking_capacity">parking capacity</string>
+    <string name="create_property">Create Property</string>
+
+    <!-- Renter Account Setup -->
+    <string name="renter_title">Renter</string>
+    <string name="renter_sub">Complete your renter account setup</string>
+
+    <string name="select_property">select Property</string>
+    <string name="room_number">room number</string>
+    <string name="reference_name">reference name</string>
+    <string name="reference_contact">reference contact</string>
+    <string name="previous_address">previous address</string>
+    <string name="emergency_name">emergency contact name</string>
+    <string name="emergency_number">emergency contact number</string>
+    <string name="car_plate">car plate number</string>
+    <string name="id_card">Identification card</string>
+    <string name="complete_profile">Complete Profile</string>
+
+    <string name="addr_line">540 Seymour Street,\nKamloops, BC, V2C3M2</string>
+    <string name="recent">Recent</string>
+    <string name="complains">Complains</string>
+    <string name="contacts">Contacts</string>
+    <string name="rent">Rent</string>
+    <string name="fix">Fix</string>
+    <string name="rent_paid">Rent Paid</string>
+    <string name="complain_generated">Complain Generated</string>
+    <string name="maintenance_requested">Maintenance Requested</string>
+
+<!--    form validations -->
+
+    <string name="invalid_phone">Enter a valid phone</string>
+
+    <!-- Auth / generic -->
+
+    <string name="required">Required</string>
+    <string name="invalid_email">Enter a valid email</string>
+    <string name="password_min_chars">Minimum 6 characters</string>
+    <string name="creating">Creating…</string>
+    <string name="invalid_number">Enter a valid number</string>
 
 
 </resources>
