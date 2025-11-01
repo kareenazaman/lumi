@@ -7,43 +7,51 @@
 
     <application
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.LumiApp"
-        android:fullBackupContent="@xml/backup_rules"
-        android:dataExtractionRules="@xml/data_extraction_rules"
         tools:targetApi="31">
-        <!-- Launcher Activity (opens first). Your MainActivity already sets activity_signup as content -->
+        <activity
+            android:name=".CreateComplaint"
+            android:exported="false" />
+        <activity
+            android:name=".ComplaintList"
+            android:exported="false" />
+        <activity
+            android:name=".PMDashboardContainer"
+            android:exported="false" />
+        <activity
+            android:name=".DashboardRenter"
+            android:exported="false" />
+        <activity
+            android:name=".activity_role_select"
+            android:exported="false" /> <!-- Launcher Activity (opens first). Your MainActivity already sets activity_signup as content -->
         <activity
             android:name=".SignupActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MainActivity" android:exported="false"/>
-
         <activity
-            android:name=".DashboardPropertyManager"
+            android:name=".MainActivity"
             android:exported="false" />
+
         <activity
             android:name=".RenterAccSetup"
             android:exported="false" />
         <activity
             android:name=".PMAccSetup"
             android:exported="false" />
-<!--        <activity-->
-<!--            android:name=".MainActivity"-->
-<!--            android:exported="true">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
-
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
-<!--        </activity>-->
+        <activity
+            android:name=".ComplaintDetailActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

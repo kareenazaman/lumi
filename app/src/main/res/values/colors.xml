@@ -4,4 +4,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="brand_primary">#0B3327</color>
     <color name="chip_bg">#1AFFFFFF</color> <!-- semi-translucent white -->
+
 </resources>

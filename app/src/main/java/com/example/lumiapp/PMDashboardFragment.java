@@ -1,41 +1,41 @@
 package com.example.lumiapp;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
 
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.Arrays;
 import java.util.List;
 
+public class PMDashboardFragment extends Fragment {
 
-public class DashboardPropertyManager extends AppCompatActivity {
+    public PMDashboardFragment() {
+        // Required empty public constructor
+    }
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_dashboard_pm);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
 
-        // Inflate the screen layout
-        setContentView(R.layout.activity_dashboard_pm);
+        // Inflate the layout for this fragment (use the same XML as before)
+        View view = inflater.inflate(R.layout.fragment_pm_dashboard, container, false);
 
-        // 1) Setup RecyclerView
-        RecyclerView rv = findViewById(R.id.rvRecent);
-        rv.setLayoutManager(new LinearLayoutManager(this));
+        // Setup RecyclerView
+        RecyclerView rv = view.findViewById(R.id.rvRecent);
+        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // 2) Temporary demo data (replace with real data later)
+        // Temporary demo data (replace with Firestore or DB data later)
         List<PMDashboardRecentItems> data = Arrays.asList(
                 new PMDashboardRecentItems(
                         "Ahsan Habib",
@@ -64,14 +64,20 @@ public class DashboardPropertyManager extends AppCompatActivity {
                 )
         );
 
-        // 3) Create adapter with optional click callback
-        PMDashboardRecentItems_Adapter adapter =
-                new PMDashboardRecentItems_Adapter(data, item -> {
-                    // TODO: handle click (navigate or show details)
-                });
+        // Create adapter
+        PMDashboardRecentItems_Adapter adapter = new PMDashboardRecentItems_Adapter(data, item -> {
+            // TODO: handle click event (navigate or show details)
+        });
 
-        // 4) Hook adapter to RecyclerView
+        // Attach adapter to RecyclerView
         rv.setAdapter(adapter);
 
+        ImageView complaintsBtn = view.findViewById(R.id.complaint_page_btn);
+        if (complaintsBtn != null) {
+            complaintsBtn.setOnClickListener(v ->
+                    startActivity(new Intent(requireContext(), ComplaintList.class)));
+        }
+
+        return view;
     }
 }

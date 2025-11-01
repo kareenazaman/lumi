@@ -54,7 +54,7 @@
 
     <string name="addr_line">540 Seymour Street,\nKamloops, BC, V2C3M2</string>
     <string name="recent">Recent</string>
-    <string name="complains">Complains</string>
+    <string name="complains">Complaints</string>
     <string name="contacts">Contacts</string>
     <string name="rent">Rent</string>
     <string name="fix">Fix</string>
@@ -62,7 +62,7 @@
     <string name="complain_generated">Complain Generated</string>
     <string name="maintenance_requested">Maintenance Requested</string>
 
-<!--    form validations -->
+    <!--    form validations -->
 
     <string name="invalid_phone">Enter a valid phone</string>
 
@@ -74,5 +74,11 @@
     <string name="creating">Creating…</string>
     <string name="invalid_number">Enter a valid number</string>
 
+
+    <!--    Role selection page content -->
+    <string name="role_select_title">Are you ...</string>
+    <string name="role_select_description">Please choose status.</string>
+    <string name="renter_label">Renter</string>
+    <string name="manager_label">Manager</string>
 
 </resources>

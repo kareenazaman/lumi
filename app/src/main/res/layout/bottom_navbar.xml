@@ -1,0 +1,30 @@
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/bottom_nav"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="bottom"
+    android:layout_margin="16dp"
+    android:backgroundTint="@color/white"
+    android:elevation="10dp"
+    android:padding="8dp"
+    app:cardCornerRadius="50dp"
+    app:cardElevation="10dp"
+    app:cardUseCompatPadding="true">
+
+    <LinearLayout
+        android:id="@+id/navContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:weightSum="4">
+
+        <include layout="@layout/nav_dashboard" />
+        <include layout="@layout/nav_dashboard" />
+        <include layout="@layout/nav_dashboard" />
+        <include layout="@layout/nav_dashboard" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

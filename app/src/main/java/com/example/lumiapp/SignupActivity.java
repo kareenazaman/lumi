@@ -61,7 +61,7 @@ public class SignupActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         if (auth.getCurrentUser() != null) {
-            routeAfterAuth(); // already logged in → check profile completeness
+            checkUserRole(); // already logged in → check if role selected
         }
     }
 
@@ -102,8 +102,6 @@ public class SignupActivity extends AppCompatActivity {
                         return;
                     }
 
-                    Toast.makeText(this, "User created!", Toast.LENGTH_SHORT).show();
-
                     if (auth.getCurrentUser() == null) {
                         toggleLoading(false);
                         Toast.makeText(this, "User not available after signup", Toast.LENGTH_LONG).show();
@@ -117,7 +115,6 @@ public class SignupActivity extends AppCompatActivity {
 
                     auth.getCurrentUser().updateProfile(req)
                             .addOnCompleteListener(updTask -> {
-                                // Create/merge base user doc
                                 String uid = auth.getCurrentUser().getUid();
                                 Map<String, Object> profile = new HashMap<>();
                                 profile.put("uid", uid);
@@ -126,25 +123,21 @@ public class SignupActivity extends AppCompatActivity {
                                 profile.put("phone", phone);
                                 profile.put("createdAt", Timestamp.now());
                                 profile.put("provider", "password");
-                                // mark role (if you want explicit)
-                                profile.put("userType", "manager");
-                                // ensure pmCompleted exists (false until setup finishes)
-                                profile.put("pmCompleted", false);
+                                // Note: userType not set yet → handled later
 
                                 db.collection("users").document(uid)
                                         .set(profile)
-                                        .addOnSuccessListener(unused -> routeAfterAuth())
+                                        .addOnSuccessListener(unused -> checkUserRole())
                                         .addOnFailureListener(e -> {
                                             Toast.makeText(this, "Profile save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                            // Even if user doc failed, still try routing (it will fall back to PMAccSetup)
-                                            routeAfterAuth();
+                                            checkUserRole();
                                         })
                                         .addOnCompleteListener(done -> toggleLoading(false));
                             })
                             .addOnFailureListener(e -> {
                                 toggleLoading(false);
                                 Toast.makeText(this, "Profile update failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                routeAfterAuth();
+                                checkUserRole();
                             });
                 })
                 .addOnFailureListener(e -> {
@@ -153,35 +146,51 @@ public class SignupActivity extends AppCompatActivity {
                 });
     }
 
-    /** Decides where to go next: PM setup (if incomplete) or Main dashboard */
-    private void routeAfterAuth() {
+    /** Checks if user has selected a role — if not, go to Role Select page */
+    private void checkUserRole() {
         if (auth.getCurrentUser() == null) return;
         String uid = auth.getCurrentUser().getUid();
 
         db.collection("users").document(uid).get()
                 .addOnSuccessListener((DocumentSnapshot doc) -> {
-                    boolean pmCompleted = doc != null && Boolean.TRUE.equals(doc.getBoolean("pmCompleted"));
-                    if (pmCompleted) {
-                        goToDashboard();
+                    if (doc != null && doc.exists()) {
+                        String userType = doc.getString("userType");
+                        if (userType == null || userType.isEmpty()) {
+                            //  Role not chosen yet → open Role Select page
+                            goToRoleSelect();
+                        } else {
+                            //  Role already set → route accordingly
+                            if (userType.equals("renter")) {
+                                goToRenterDashboard();
+                            } else if (userType.equals("manager")) {
+                                goToManagerDashboard();
+                            } else {
+                                goToRoleSelect(); // unknown → fallback
+                            }
+                        }
                     } else {
-                        goToPMSetup();
+                        goToRoleSelect();
                     }
                 })
-                .addOnFailureListener(e -> {
-                    // If we can’t read the user doc, default to setup to be safe
-                    goToPMSetup();
-                });
+                .addOnFailureListener(e -> goToRoleSelect());
     }
 
-    private void goToPMSetup() {
-        Intent i = new Intent(SignupActivity.this, PMAccSetup.class);
+    private void goToRoleSelect() {
+        Intent i = new Intent(SignupActivity.this, activity_role_select.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();
     }
 
-    private void goToDashboard() {
-        Intent i = new Intent(SignupActivity.this, MainActivity.class);
+    private void goToRenterDashboard() {
+        Intent i = new Intent(SignupActivity.this, DashboardRenter.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(i);
+        finish();
+    }
+
+    private void goToManagerDashboard() {
+        Intent i = new Intent(SignupActivity.this, PMDashboardContainer.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();

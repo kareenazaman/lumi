@@ -2,7 +2,6 @@ package com.example.lumiapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -62,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void goToPMDashboard() {
-        Intent i = new Intent(this, DashboardPropertyManager.class);
+        Intent i = new Intent(this, PMDashboardContainer.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();
