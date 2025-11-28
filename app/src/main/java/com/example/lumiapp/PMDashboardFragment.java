@@ -92,6 +92,16 @@ public class PMDashboardFragment extends Fragment {
                 startActivity(i);
             });
         }
+        // 🔹 Fix requests list button → open ContactPage
+        ImageView contactsBtn = view.findViewById(R.id.contacts_page_btn);
+        if (contactsBtn != null) {
+            contactsBtn.setOnClickListener(v -> {
+                Intent i = new Intent(requireContext(), ContactList.class);
+                i.putExtra("role", "admin"); // so FAB + edit works
+                startActivity(i);
+            });
+        }
+
 
         return view;
     }

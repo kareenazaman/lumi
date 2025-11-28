@@ -15,7 +15,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LumiApp"
         tools:targetApi="31">
-
+        <activity
+            android:name=".ContactList"
+            android:exported="false" />
+        <activity
+            android:name=".AddContactActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ViewContactActivity"
+            android:exported="false" />
         <activity
             android:name=".CreateFixRequestActivity"
             android:exported="false" />
@@ -25,7 +33,6 @@
         <activity
             android:name=".FixRequestDetailActivity"
             android:exported="false" />
-
         <activity
             android:name=".CreateComplaint"
             android:exported="false" />
@@ -46,6 +53,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -65,6 +73,5 @@
 
 
     </application>
-
 
 </manifest>

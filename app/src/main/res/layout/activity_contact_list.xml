@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F6F5">
+
+    <!-- Back button -->
+    <ImageButton
+        android:id="@+id/back_btn"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="26dp"
+        android:layout_marginTop="68dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/back_btn" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:gravity="center_vertical"
+        android:text="Contacts"
+        android:textColor="@android:color/black"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@id/back_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/back_btn"
+        app:layout_constraintBottom_toBottomOf="@id/back_btn" />
+
+    <!-- Search row -->
+    <LinearLayout
+        android:id="@+id/searchRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/back_btn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="@android:color/white"
+            android:hint="Search by name, phone, email"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textSize="14sp" />
+
+        <ImageButton
+            android:id="@+id/btnSearch"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Search"
+            app:srcCompat="@drawable/ic_search" />
+    </LinearLayout>
+
+    <!-- Contacts list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvContacts"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@id/searchRow"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Add contact FAB: admin only in code -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/ic_add" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
