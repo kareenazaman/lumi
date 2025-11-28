@@ -21,6 +21,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:orientation="vertical"
             android:padding="25dp">
 
@@ -76,7 +77,17 @@
                         android:focusable="true"
                         android:foreground="?attr/selectableItemBackgroundBorderless">
 
+                        <!-- Image preview -->
+                        <ImageView
+                            android:id="@+id/imgPreview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
+
+                        <!-- Plus sign (shown when no image) -->
                         <TextView
+                            android:id="@+id/tvPlus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
@@ -88,7 +99,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Property Name (with wrapper ID) -->
+            <!-- Property Name -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_propertyName"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -96,10 +107,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:hint="@string/property_name"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/input_propertyName"
@@ -109,7 +120,7 @@
                     android:minHeight="56dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Property Type (wrapper already had id=tilType) -->
+            <!-- Property Type -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilType"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
@@ -117,21 +128,21 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:hint="@string/property_type"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp">
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/input_propertyType"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="56dp"
+                    android:contentDescription="@string/property_type"
                     android:inputType="none"
-                    android:contentDescription="@string/property_type" />
+                    android:minHeight="56dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Address (with wrapper ID) -->
+            <!-- Address -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_propertyAddress"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -139,10 +150,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:hint="@string/property_address"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/input_propertyAddress"
@@ -152,7 +163,7 @@
                     android:minHeight="56dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Renter capacity (with wrapper ID) -->
+            <!-- Renter capacity -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_renterCapacity"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -160,10 +171,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:hint="@string/renter_capacity"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/input_renterCapacity"
@@ -173,7 +184,7 @@
                     android:minHeight="56dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Parking capacity (with wrapper ID) -->
+            <!-- Parking capacity -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/til_parkingCapacity"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -181,10 +192,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:hint="@string/parking_capacity"
-                app:boxCornerRadiusTopStart="12dp"
-                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusBottomEnd="12dp"
                 app:boxCornerRadiusBottomStart="12dp"
-                app:boxCornerRadiusBottomEnd="12dp">
+                app:boxCornerRadiusTopEnd="12dp"
+                app:boxCornerRadiusTopStart="12dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/input_ParkingCapacity"
