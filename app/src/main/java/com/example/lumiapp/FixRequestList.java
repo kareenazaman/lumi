@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -12,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -35,12 +37,14 @@ public class FixRequestList extends AppCompatActivity {
 
     private MaterialButton btnCreate;
     private ImageButton backBtn;
+    private ImageView headerImage;
 
     private String userId;
     private String role; // "renter" or "manager"
 
     private ListenerRegistration renterReg;
     private final List<ListenerRegistration> managerRegs = new ArrayList<>();
+    private ListenerRegistration userHeaderReg;   // 🔹 for active property header image
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -56,6 +60,8 @@ public class FixRequestList extends AppCompatActivity {
         if (recentHeader != null) {
             recentHeader.setText("Fix Requests");
         }
+
+        headerImage = findViewById(R.id.headerImage);
 
         rvFix = findViewById(R.id.rvComplaint);
         rvFix.setLayoutManager(new LinearLayoutManager(this));
@@ -86,6 +92,10 @@ public class FixRequestList extends AppCompatActivity {
         }
         userId = auth.getCurrentUser().getUid();
 
+        // 🔹 Set header image from currently selected property
+        listenActivePropertyHeader();
+
+        // 🔹 Setup queries based on role
         loadUserRoleThenListen();
     }
 
@@ -104,6 +114,38 @@ public class FixRequestList extends AppCompatActivity {
         }
         for (ListenerRegistration r : managerRegs) r.remove();
         managerRegs.clear();
+
+        if (userHeaderReg != null) {
+            userHeaderReg.remove();
+            userHeaderReg = null;
+        }
+    }
+
+    /**
+     * Set header image to the currently selected property's image
+     * (activePropertyImageUrl in users/{uid}).
+     */
+    private void listenActivePropertyHeader() {
+        if (userId == null) return;
+
+        userHeaderReg = db.collection("users").document(userId)
+                .addSnapshotListener((snap, e) -> {
+                    if (snap == null || !snap.exists()) return;
+
+                    String imageUrl = snap.getString("activePropertyImageUrl");
+
+                    if (headerImage == null) return;
+
+                    if (imageUrl != null && !imageUrl.isEmpty()) {
+                        Glide.with(this)
+                                .load(imageUrl)
+                                .centerCrop()
+                                .placeholder(R.drawable.img_dashboard_bg)
+                                .into(headerImage);
+                    } else {
+                        headerImage.setImageResource(R.drawable.img_dashboard_bg);
+                    }
+                });
     }
 
     private void loadUserRoleThenListen() {
@@ -121,17 +163,57 @@ public class FixRequestList extends AppCompatActivity {
                     managerRegs.clear();
 
                     if ("manager".equalsIgnoreCase(role)) {
-                        @SuppressWarnings("unchecked")
-                        List<String> managerOf = (List<String>) snap.get("managerOf");
-                        loadManagerFixesOnce(managerOf);
+                        // 🔹 Manager: prefer ACTIVE property only
+                        String activePropertyId = snap.getString("activePropertyId");
+
+                        if (activePropertyId != null && !activePropertyId.isEmpty()) {
+                            listenManagerFixesForProperty(activePropertyId);
+                        } else {
+                            // fallback: old behavior across all managerOf properties
+                            @SuppressWarnings("unchecked")
+                            List<String> managerOf = (List<String>) snap.get("managerOf");
+                            loadManagerFixesOnce(managerOf);
+                        }
                     } else {
+                        // 🔹 Renter: only their own fix requests
                         listenRenterFixes();
                     }
                 })
                 .addOnFailureListener(e -> Log.e(TAG, "loadUserRole failed", e));
     }
 
-    // Manager: one-time load
+    /**
+     * Manager: live listen to fixRequests for ONE propertyId (active property).
+     */
+    private void listenManagerFixesForProperty(String propertyId) {
+        renterReg = db.collection("fixRequests")
+                .whereEqualTo("propertyId", propertyId)
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .addSnapshotListener((qs, e) -> {
+                    if (e != null) {
+                        Log.e(TAG, "Manager listen failed (fixRequests), fallback possible", e);
+                        return;
+                    }
+                    if (qs == null) {
+                        adapter.setItems(new ArrayList<>());
+                        return;
+                    }
+
+                    ArrayList<FixRequest> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot d : qs) {
+                        FixRequest f = d.toObject(FixRequest.class);
+                        if (f == null) continue;
+                        f.id = d.getId();
+                        if (f.shortId == null && f.id.length() >= 6) {
+                            f.shortId = f.id.substring(0, 6).toUpperCase(Locale.US);
+                        }
+                        list.add(f);
+                    }
+                    adapter.setItems(list);
+                });
+    }
+
+    // Manager: one-time load (fallback if no activePropertyId)
     private void loadManagerFixesOnce(@Nullable List<String> propertyIds) {
         if (propertyIds == null || propertyIds.isEmpty()) {
             adapter.setItems(new ArrayList<>());

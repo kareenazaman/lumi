@@ -17,6 +17,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- DARK OVERLAY ON TOP OF HEADER IMAGE -->
+    <View
+        android:id="@+id/headerOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#60000000"
+        android:clickable="false"
+        android:focusable="false"
+        app:layout_constraintTop_toTopOf="@id/headerImage"
+        app:layout_constraintBottom_toBottomOf="@id/headerImage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- LOCATION CHIP -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/locationChip"
@@ -45,17 +58,35 @@
                 android:layout_height="wrap_content"
                 android:src="@drawable/address" />
 
-            <TextView
-                android:id="@+id/addressText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
-                android:layout_weight="1"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:text="@string/addr_line"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
+
+                <TextView
+                    android:id="@+id/propertyNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="TextView"
+                    android:textColor="@color/white"
+                    android:textSize="20sp" />
+
+                <TextView
+                    android:id="@+id/addressText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:text="@string/addr_line"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -73,7 +104,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/locationChip">
 
-        <!-- one helper item -->
+        <!-- Complaints -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -98,6 +129,7 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
+        <!-- Fix -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -122,6 +154,7 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
+        <!-- Contacts -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -146,6 +179,7 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
+        <!-- Rent -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"

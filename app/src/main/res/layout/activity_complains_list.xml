@@ -18,9 +18,20 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- LOCATION CHIP -->
+    <!-- DARK OVERLAY ON TOP OF HEADER IMAGE -->
+    <View
+        android:id="@+id/headerOverlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="#60000000"
+    android:clickable="false"
+    android:focusable="false"
+    app:layout_constraintTop_toTopOf="@id/headerImage"
+    app:layout_constraintBottom_toBottomOf="@id/headerImage"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent" />
 
-
+    <!-- Back button -->
     <ImageButton
         android:id="@+id/back_btn"
         android:layout_width="wrap_content"
@@ -32,7 +43,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/back_btn" />
 
-
+    <!-- Create Complaint button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/create_complain"
         android:layout_width="0dp"
@@ -44,7 +55,6 @@
         android:paddingBottom="10dp"
         android:text="Create Complaint"
         app:icon="@drawable/plus_solid"
-
         app:iconGravity="textStart"
         app:iconPadding="8dp"
         app:iconTint="@android:color/white"
@@ -52,7 +62,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/back_btn" />
 
-
+    <!-- Card with list -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="0dp"
         android:layout_height="0dp"

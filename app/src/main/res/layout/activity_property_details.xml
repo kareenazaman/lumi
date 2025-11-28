@@ -4,93 +4,206 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="#F3F6F5">
 
-    <!-- Back button / top bar -->
+    <!-- HERO PROPERTY IMAGE / HEADER -->
+    <ImageView
+        android:id="@+id/imgPropertyDetail"
+        android:layout_width="0dp"
+        android:layout_height="260dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_rounded_image"
+        android:clipToOutline="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- BACK BUTTON ON TOP OF IMAGE -->
     <ImageButton
         android:id="@+id/back_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="26dp"
-        android:layout_marginTop="68dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="48dp"
         android:background="@android:color/transparent"
+        android:contentDescription="@string/app_name"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/back_btn" />
 
-    <!-- Property image -->
-    <ImageView
-        android:id="@+id/imgPropertyDetail"
+    <!-- CONTENT AREA SCROLLS UNDER THE HEADER IMAGE -->
+    <ScrollView
+        android:id="@+id/detailsScroll"
         android:layout_width="0dp"
-        android:layout_height="200dp"
-        android:layout_marginTop="16dp"
-        android:scaleType="centerCrop"
-        android:background="@drawable/bg_rounded_image"
-        android:clipToOutline="true"
-        app:layout_constraintTop_toBottomOf="@id/back_btn"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Property name -->
-    <TextView
-        android:id="@+id/tvPropertyNameDetail"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Property Name"
-        android:textSize="20sp"
-        android:textStyle="bold"
+        android:layout_height="0dp"
+        android:fillViewport="true"
         app:layout_constraintTop_toBottomOf="@id/imgPropertyDetail"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Address -->
-    <TextView
-        android:id="@+id/tvPropertyAddressDetail"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Address"
-        android:textSize="14sp"
-        android:textColor="#808080"
-        app:layout_constraintTop_toBottomOf="@id/tvPropertyNameDetail"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="24dp">
 
-    <!-- Type -->
-    <TextView
-        android:id="@+id/tvPropertyTypeDetail"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Type"
-        android:textSize="16sp"
-        app:layout_constraintTop_toBottomOf="@id/tvPropertyAddressDetail"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+            <!-- MAIN DETAILS CARD -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="4dp">
 
-    <!-- Renter capacity -->
-    <TextView
-        android:id="@+id/tvRenterCapacityDetail"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Renter capacity: 0"
-        android:textSize="14sp"
-        app:layout_constraintTop_toBottomOf="@id/tvPropertyTypeDetail"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-    <!-- Parking capacity -->
-    <TextView
-        android:id="@+id/tvParkingCapacityDetail"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="Parking capacity: 0"
-        android:textSize="14sp"
-        app:layout_constraintTop_toBottomOf="@id/tvRenterCapacityDetail"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+                    <!-- Property name (big) -->
+                    <TextView
+                        android:id="@+id/tvPropertyNameDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Property Name"
+                        android:textColor="@color/brand_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <!-- Address label -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Address"
+                        android:textAllCaps="true"
+                        android:textColor="#9AA5A1"
+                        android:textSize="11sp" />
+
+                    <!-- Actual address -->
+                    <TextView
+                        android:id="@+id/tvPropertyAddressDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="123 Main Street, Kamloops, BC"
+                        android:textColor="#555555"
+                        android:textSize="14sp" />
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#EEEEEE" />
+
+                    <!-- TYPE SECTION -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Property Type"
+                        android:textAllCaps="true"
+                        android:textColor="#9AA5A1"
+                        android:textSize="11sp" />
+
+                    <TextView
+                        android:id="@+id/tvPropertyTypeDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Apartment"
+                        android:textColor="#555555"
+                        android:textSize="14sp" />
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="12dp"
+                        android:background="#EEEEEE" />
+
+                    <!-- CAPACITY SECTION AS TWO "CHIPS" -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Renter capacity -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingEnd="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Renter capacity"
+                                android:textAllCaps="true"
+                                android:textColor="#9AA5A1"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tvRenterCapacityDetail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Renter capacity: 0"
+                                android:textColor="#333333"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+
+                        <!-- Parking capacity -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingStart="8dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Parking capacity"
+                                android:textAllCaps="true"
+                                android:textColor="#9AA5A1"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tvParkingCapacityDetail"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Parking capacity: 0"
+                                android:textColor="#333333"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- SELECT PROPERTY BUTTON -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSelectProperty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Set as current property"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                app:backgroundTint="@color/brand_primary"
+                app:cornerRadius="20dp"
+                />
+
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
