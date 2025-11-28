@@ -3,6 +3,7 @@ package com.example.lumiapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
@@ -44,7 +46,7 @@ public class FixRequestList extends AppCompatActivity {
 
     private ListenerRegistration renterReg;
     private final List<ListenerRegistration> managerRegs = new ArrayList<>();
-    private ListenerRegistration userHeaderReg;   // 🔹 for active property header image
+    private ListenerRegistration userHeaderReg;   // 🔹 for header image
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,7 +94,7 @@ public class FixRequestList extends AppCompatActivity {
         }
         userId = auth.getCurrentUser().getUid();
 
-        // 🔹 Set header image from currently selected property
+        // 🔹 Set header image based on role (manager vs renter)
         listenActivePropertyHeader();
 
         // 🔹 Setup queries based on role
@@ -122,30 +124,84 @@ public class FixRequestList extends AppCompatActivity {
     }
 
     /**
-     * Set header image to the currently selected property's image
-     * (activePropertyImageUrl in users/{uid}).
+     * Header image logic:
+     *  - Manager → users/{uid}.activePropertyImageUrl
+     *  - Renter  → renters/{uid}.propertyId → properties/{propertyId}.imageUrl
      */
     private void listenActivePropertyHeader() {
-        if (userId == null) return;
+        if (userId == null || headerImage == null) return;
 
         userHeaderReg = db.collection("users").document(userId)
                 .addSnapshotListener((snap, e) -> {
-                    if (snap == null || !snap.exists()) return;
+                    if (e != null) {
+                        Log.e(TAG, "listenActivePropertyHeader error", e);
+                        setHeaderImage(null);
+                        return;
+                    }
+                    if (snap == null || !snap.exists()) {
+                        setHeaderImage(null);
+                        return;
+                    }
 
-                    String imageUrl = snap.getString("activePropertyImageUrl");
+                    String userType = snap.getString("userType");
+                    if (userType == null) userType = "renter";
 
-                    if (headerImage == null) return;
-
-                    if (imageUrl != null && !imageUrl.isEmpty()) {
-                        Glide.with(this)
-                                .load(imageUrl)
-                                .centerCrop()
-                                .placeholder(R.drawable.img_dashboard_bg)
-                                .into(headerImage);
+                    if ("manager".equalsIgnoreCase(userType)) {
+                        // Manager → use activePropertyImageUrl
+                        String imageUrl = snap.getString("activePropertyImageUrl");
+                        setHeaderImage(imageUrl);
                     } else {
-                        headerImage.setImageResource(R.drawable.img_dashboard_bg);
+                        // Renter → go via renters/{uid} → properties/{propertyId}
+                        db.collection("renters").document(userId)
+                                .get()
+                                .addOnSuccessListener((DocumentSnapshot rSnap) -> {
+                                    if (rSnap == null || !rSnap.exists()) {
+                                        setHeaderImage(null);
+                                        return;
+                                    }
+
+                                    String propertyId = rSnap.getString("propertyId");
+                                    if (TextUtils.isEmpty(propertyId)) {
+                                        setHeaderImage(null);
+                                        return;
+                                    }
+
+                                    db.collection("properties")
+                                            .document(propertyId)
+                                            .get()
+                                            .addOnSuccessListener(pSnap -> {
+                                                if (pSnap != null && pSnap.exists()) {
+                                                    String imageUrl = pSnap.getString("imageUrl");
+                                                    setHeaderImage(imageUrl);
+                                                } else {
+                                                    setHeaderImage(null);
+                                                }
+                                            })
+                                            .addOnFailureListener(err -> {
+                                                Log.e(TAG, "Property load failed (fixRequests header)", err);
+                                                setHeaderImage(null);
+                                            });
+                                })
+                                .addOnFailureListener(err -> {
+                                    Log.e(TAG, "Renter doc load failed (fixRequests header)", err);
+                                    setHeaderImage(null);
+                                });
                     }
                 });
+    }
+
+    private void setHeaderImage(@Nullable String imageUrl) {
+        if (headerImage == null) return;
+
+        if (!TextUtils.isEmpty(imageUrl)) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .centerCrop()
+                    .placeholder(R.drawable.img_dashboard_bg)
+                    .into(headerImage);
+        } else {
+            headerImage.setImageResource(R.drawable.img_dashboard_bg);
+        }
     }
 
     private void loadUserRoleThenListen() {

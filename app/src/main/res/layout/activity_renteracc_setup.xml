@@ -203,9 +203,9 @@
                     android:hint="@null"/>
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- ID card uploader -->
+            <!-- Profile picture uploader (replaces ID card) -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardId"
+                android:id="@+id/cardProfilePhoto"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -222,12 +222,12 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/id_card"
+                        android:text="Profile picture"
                         android:textSize="12sp"
                         android:textColor="#7A8A86"/>
 
                     <FrameLayout
-                        android:id="@+id/uploadId"
+                        android:id="@+id/uploadProfile"
                         android:layout_width="match_parent"
                         android:layout_height="150dp"
                         android:layout_marginTop="8dp"
@@ -236,15 +236,24 @@
                         android:focusable="true"
                         android:foreground="?attr/selectableItemBackgroundBorderless">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="+"
-                            android:textSize="24sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/brand_primary"
-                            android:layout_gravity="center"/>
+                        <ImageView
+                            android:id="@+id/imgProfile"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:layout_gravity="center"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_person_placeholder" />
+
                     </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Tap to upload a photo"
+                        android:textSize="11sp"
+                        android:textColor="#7A8A86"/>
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

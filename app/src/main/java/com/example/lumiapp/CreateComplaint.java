@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.FrameLayout;
@@ -16,6 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -37,6 +39,8 @@ public class CreateComplaint extends AppCompatActivity {
 
     private static final int REQUEST_IMAGE_PICK = 1001;
 
+    // Header + fields
+    private ImageView headerImage;
     private TextView tvCreatedBy, tvRoomChip, tvPropertyAddress, tvDate, tvTitle;
     private TextInputEditText etDesc;
     private TextInputLayout tilProperty, tilDesc;
@@ -58,10 +62,10 @@ public class CreateComplaint extends AppCompatActivity {
     private String userId;
     private String userName;
 
-    // renter fields (optional for manager)
+    // renter / manager fields
     private String roomNumber;
-    private String propertyId;       // set from dropdown (manager) or user doc (renter)
-    private String propertyAddress;  // name/address shown
+    private String propertyId;       // set from dropdown (manager) or renters doc (renter)
+    private String propertyAddress;  // nice display string for property
 
     // image state
     private Uri imageUri = null;
@@ -85,24 +89,30 @@ public class CreateComplaint extends AppCompatActivity {
     }
 
     private void bindViews() {
-        tvTitle = findViewById(R.id.tvTitle);
-        tvCreatedBy = findViewById(R.id.tvCreatedBy);
-        tvRoomChip = findViewById(R.id.tvRoomChip);
+        headerImage       = findViewById(R.id.headerImage);
+        tvTitle           = findViewById(R.id.tvTitle);
+        tvCreatedBy       = findViewById(R.id.tvCreatedBy);
+        tvRoomChip        = findViewById(R.id.tvRoomChip);
         tvPropertyAddress = findViewById(R.id.tvPropertyAddress);
-        tvDate = findViewById(R.id.tvDate);
-        etDesc = findViewById(R.id.etDesc);
-        tilDesc = findViewById(R.id.tilDesc);
-        tilProperty = findViewById(R.id.tilProperty);
-        actProperty = findViewById(R.id.actProperty);
-        btnCreate = findViewById(R.id.btnCreateComplaint);
-        backBtn = findViewById(R.id.back_btn);
+        tvDate            = findViewById(R.id.tvDate);
+        etDesc            = findViewById(R.id.etDesc);
+        tilDesc           = findViewById(R.id.tilDesc);
+        tilProperty       = findViewById(R.id.tilProperty);
+        actProperty       = findViewById(R.id.actProperty);
+        btnCreate         = findViewById(R.id.btnCreateComplaint);
+        backBtn           = findViewById(R.id.back_btn);
 
         // Card-style uploader
         uploadComplaintImage = findViewById(R.id.uploadComplaintImage);
-        imgComplaintPreview = findViewById(R.id.imgComplaintPreview);
-        tvComplaintPlus = findViewById(R.id.tvComplaintPlus);
+        imgComplaintPreview  = findViewById(R.id.imgComplaintPreview);
+        tvComplaintPlus      = findViewById(R.id.tvComplaintPlus);
 
         if (tvTitle != null) tvTitle.setText("Create Complaint");
+
+        // default header image
+        if (headerImage != null) {
+            headerImage.setImageResource(R.drawable.img_dashboard_bg);
+        }
     }
 
     private void fillStaticDate() {
@@ -113,42 +123,91 @@ public class CreateComplaint extends AppCompatActivity {
 
     @SuppressWarnings("unchecked")
     private void loadUserProfileThenSetupUI() {
-        if (auth.getCurrentUser() == null) { finish(); return; }
+        if (auth.getCurrentUser() == null) {
+            finish();
+            return;
+        }
         userId = auth.getCurrentUser().getUid();
 
-        db.collection("users").document(userId).get().addOnSuccessListener(snap -> {
-            role = snap.getString("userType");  // "manager" or "renter"
-            if (role == null) role = "renter";
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(snap -> {
+                    role = snap.getString("userType");  // "manager" or "renter"
+                    if (role == null) role = "renter";
 
-            // createdBy = NAME, not email
-            userName = snap.getString("name");
-            tvCreatedBy.setText(userName != null ? userName : "—");
+                    // createdBy = NAME, not email
+                    userName = snap.getString("name");
+                    tvCreatedBy.setText(userName != null ? userName : "—");
 
-            if ("manager".equalsIgnoreCase(role)) {
-                // Property manager has no room, so show this label
-                tvRoomChip.setText("Property Manager");
-                tvPropertyAddress.setVisibility(View.GONE);
-                tilProperty.setVisibility(View.VISIBLE);
+                    if ("manager".equalsIgnoreCase(role)) {
+                        // 🔹 MANAGER UI
+                        tvRoomChip.setText("Property Manager");
+                        tvPropertyAddress.setVisibility(View.GONE);
+                        tilProperty.setVisibility(View.VISIBLE);
 
-                // Use managerOf list if present, fallback to ownerUid
-                java.util.List<String> managerOf = (java.util.List<String>) snap.get("managerOf");
-                loadManagerProperties(userId, managerOf);
+                        // Use managerOf list if present, fallback to ownerUid
+                        java.util.List<String> managerOf =
+                                (java.util.List<String>) snap.get("managerOf");
+                        loadManagerProperties(userId, managerOf);
 
-            } else {
-                // renter fields
-                roomNumber = snap.getString("roomNumber");
-                propertyId = snap.getString("propertyId");
-                propertyAddress = snap.getString("propertyAddress");
+                    } else {
+                        // 🔹 RENTER UI → read details from /renters/{uid}
+                        db.collection("renters")
+                                .document(userId)
+                                .get()
+                                .addOnSuccessListener(rSnap -> {
+                                    if (rSnap != null && rSnap.exists()) {
+                                        roomNumber = rSnap.getString("roomNumber");
+                                        propertyId = rSnap.getString("propertyId");
 
-                tvRoomChip.setText(roomNumber != null ? roomNumber : "—");
-                tvPropertyAddress.setText(propertyAddress != null ? propertyAddress : "—");
-                tvPropertyAddress.setVisibility(View.VISIBLE);
-                tilProperty.setVisibility(View.GONE);
-            }
-        }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Failed to load user: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            finish();
-        });
+                                        String propertyName = rSnap.getString("propertyName");
+                                        String prevAddress  = rSnap.getString("previousAddress");
+
+                                        // Build a nice display string
+                                        if (!TextUtils.isEmpty(propertyName) && !TextUtils.isEmpty(prevAddress)) {
+                                            propertyAddress = propertyName + " - " + prevAddress;
+                                        } else if (!TextUtils.isEmpty(propertyName)) {
+                                            propertyAddress = propertyName;
+                                        } else {
+                                            propertyAddress = prevAddress; // may be null
+                                        }
+
+                                        tvRoomChip.setText(
+                                                !TextUtils.isEmpty(roomNumber) ? roomNumber : "—"
+                                        );
+                                        tvPropertyAddress.setText(
+                                                !TextUtils.isEmpty(propertyAddress) ? propertyAddress : "—"
+                                        );
+
+                                        // 🔹 renter header image → their property
+                                        applyHeaderImageForPropertyId(propertyId);
+                                    } else {
+                                        // No renter doc yet
+                                        tvRoomChip.setText("—");
+                                        tvPropertyAddress.setText("—");
+                                        roomNumber = null;
+                                        propertyId = null;
+                                        propertyAddress = null;
+                                    }
+
+                                    tvPropertyAddress.setVisibility(View.VISIBLE);
+                                    tilProperty.setVisibility(View.GONE);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(this,
+                                            "Failed to load renter details: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+
+                                    tvRoomChip.setText("—");
+                                    tvPropertyAddress.setText("—");
+                                    tvPropertyAddress.setVisibility(View.VISIBLE);
+                                    tilProperty.setVisibility(View.GONE);
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load user: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    finish();
+                });
     }
 
     /**
@@ -211,13 +270,16 @@ public class CreateComplaint extends AppCompatActivity {
 
     private void addPropertyToLists(com.google.firebase.firestore.DocumentSnapshot d) {
         if (d == null || !d.exists()) return;
-        String pid = d.getId();
+        String pid  = d.getId();
         String name = d.getString("name");
         String addr = d.getString("address");
 
         propertyIds.add(pid);
-        propertyNames.add(name != null && !name.isEmpty() ? name :
-                (addr != null && !addr.isEmpty() ? addr : pid));
+        propertyNames.add(
+                !TextUtils.isEmpty(name)
+                        ? name
+                        : (!TextUtils.isEmpty(addr) ? addr : pid)
+        );
     }
 
     private void bindPropertyAdapter() {
@@ -231,17 +293,55 @@ public class CreateComplaint extends AppCompatActivity {
         // Preselect first property (so propertyId is never null if there is at least one)
         if (!propertyIds.isEmpty()) {
             actProperty.setText(propertyNames.get(0), false);
-            propertyId = propertyIds.get(0);
+            propertyId      = propertyIds.get(0);
             propertyAddress = propertyNames.get(0);
+
+            // 🔹 manager header image → first property
+            applyHeaderImageForPropertyId(propertyId);
         } else {
             propertyId = null;
             propertyAddress = null;
+            applyHeaderImageForPropertyId(null);
         }
 
         actProperty.setOnItemClickListener((parent, view, position, id) -> {
-            propertyId = propertyIds.get(position);
+            propertyId      = propertyIds.get(position);
             propertyAddress = propertyNames.get(position);
+
+            // 🔹 update header when manager changes property
+            applyHeaderImageForPropertyId(propertyId);
         });
+    }
+
+    /**
+     * Load property imageUrl from properties/{propertyId} into headerImage.
+     */
+    private void applyHeaderImageForPropertyId(@Nullable String propertyId) {
+        if (headerImage == null || TextUtils.isEmpty(propertyId)) {
+            if (headerImage != null) {
+                headerImage.setImageResource(R.drawable.img_dashboard_bg);
+            }
+            return;
+        }
+
+        db.collection("properties").document(propertyId).get()
+                .addOnSuccessListener(doc -> {
+                    String imageUrl = doc.getString("imageUrl");
+                    if (!TextUtils.isEmpty(imageUrl)) {
+                        Glide.with(this)
+                                .load(imageUrl)
+                                .centerCrop()
+                                .placeholder(R.drawable.img_dashboard_bg)
+                                .into(headerImage);
+                    } else {
+                        headerImage.setImageResource(R.drawable.img_dashboard_bg);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (headerImage != null) {
+                        headerImage.setImageResource(R.drawable.img_dashboard_bg);
+                    }
+                });
     }
 
     private void setListeners() {

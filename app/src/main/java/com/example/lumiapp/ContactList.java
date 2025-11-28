@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -41,9 +42,12 @@ public class ContactList extends AppCompatActivity {
     private FloatingActionButton fabAdd;
 
     private String userId;
-    private String role; // "admin" | "manager" | "renter"
+    // Comes from users/{uid}.userType → "manager" or "renter"
+    private String role;
 
+    // contacts collection docs
     private final List<Contact> customContacts = new ArrayList<>();
+    // renters (from users collection) – only used for managers
     private final List<Contact> renterContacts = new ArrayList<>();
 
     @Override
@@ -52,21 +56,24 @@ public class ContactList extends AppCompatActivity {
         setContentView(R.layout.activity_contact_list);
 
         auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+        db   = FirebaseFirestore.getInstance();
 
         userId = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
-        role = getIntent().getStringExtra("role"); // pass "admin" from PM dashboard
 
         initViews();
         setupRecycler();
         setupButtons();
-        // 🚫 no loadContacts() here → we do it in onResume so list refreshes when coming back
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadContacts();
+        loadUserRoleAndContacts();
+    }
+
+    /** true if current user is a Property Manager */
+    private boolean isManager() {
+        return role != null && role.equalsIgnoreCase("manager");
     }
 
     private void initViews() {
@@ -76,26 +83,14 @@ public class ContactList extends AppCompatActivity {
         backBtn    = findViewById(R.id.back_btn);
         fabAdd     = findViewById(R.id.fabAdd);
 
-        boolean isAdmin = role != null &&
-                role.toLowerCase(Locale.ROOT).equals("admin");
-
-        if (!isAdmin && fabAdd != null) {
-            fabAdd.hide();
-        }
-
-        // 🔥 Live search on type
+        // Live search while typing
         if (etSearch != null) {
             etSearch.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
                     applySearch();
                 }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
+                @Override public void afterTextChanged(Editable s) {}
             });
         }
     }
@@ -109,7 +104,7 @@ public class ContactList extends AppCompatActivity {
             i.putExtra("email", contact.getEmail());
             i.putExtra("propertyName", contact.getPropertyName());
             i.putExtra("isCustom", contact.isCustom());
-            i.putExtra("role", role);
+            i.putExtra("role", role);   // "manager" or "renter"
             startActivity(i);
         });
 
@@ -129,79 +124,135 @@ public class ContactList extends AppCompatActivity {
             });
         }
 
-        // search button still works, but now it's optional (typing already filters)
         if (btnSearch != null) {
             btnSearch.setOnClickListener(v -> applySearch());
         }
     }
 
-    private void loadContacts() {
+    // ================== ROLE + DATA LOADING ==================
+
+    private void loadUserRoleAndContacts() {
         if (userId == null) {
             Log.w(TAG, "No logged-in user");
             return;
         }
 
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(this::onUserLoaded)
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Failed to load user for role", e));
+    }
+
+    private void onUserLoaded(DocumentSnapshot snap) {
+        if (snap != null && snap.exists()) {
+            role = snap.getString("userType");   // "manager" or "renter"
+        }
+
+        // Update FAB visibility based on role
+        if (fabAdd != null) {
+            if (isManager()) fabAdd.show();
+            else fabAdd.hide();  // renter cannot add contacts
+        }
+
+        loadContactsInternal();
+    }
+
+    private void loadContactsInternal() {
         customContacts.clear();
         renterContacts.clear();
 
+        // 1) Load ALL contacts from contacts collection
+        //    Managers created these, renters are allowed to see them.
         db.collection("contacts")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     for (QueryDocumentSnapshot doc : querySnapshot) {
-                        String id = doc.getId();
-                        String name = doc.getString("name");
-                        String phone = doc.getString("phone");
-                        String email = doc.getString("email");
+                        String id           = doc.getId();
+                        String name         = doc.getString("name");
+                        String phone        = doc.getString("phone");
+                        String email        = doc.getString("email");
                         String propertyName = doc.getString("propertyName");
 
+                        // isCustom is always true for contacts collection docs
                         Contact c = new Contact(id, name, phone, email, propertyName, true);
                         customContacts.add(c);
                     }
 
-                    loadRenterContacts();
+                    if (isManager()) {
+                        // 2) Property Manager → also load renters of their active property
+                        loadRenterContactsForActiveProperty();
+                    } else {
+                        // 2) Renter → no renterContacts needed, just show contacts
+                        applySearch();
+                    }
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "Failed to load custom contacts", e));
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Failed to load contacts", e));
     }
 
-    private void loadRenterContacts() {
-        db.collection("users")
-                .whereEqualTo("userType", "renter")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        String id = doc.getId();
-                        String name = doc.getString("name");
-                        String phone = doc.getString("phone");
-                        String email = doc.getString("email");
-
-                        String propertyName = doc.getString("propertyName");
-                        if (propertyName == null || propertyName.trim().isEmpty()) {
-                            propertyName = doc.getString("propertyAddress");
-                        }
-
-                        Contact c = new Contact(id, name, phone, email, propertyName, false);
-                        renterContacts.add(c);
+    /**
+     * Property manager:
+     *   users/{uid}.activePropertyId → renters with that propertyId.
+     *   If activePropertyId is missing, fallback to all renters.
+     */
+    private void loadRenterContactsForActiveProperty() {
+        db.collection("users").document(userId).get()
+                .addOnSuccessListener(userSnap -> {
+                    String activePropertyId = null;
+                    if (userSnap != null && userSnap.exists()) {
+                        activePropertyId = userSnap.getString("activePropertyId");
                     }
 
-                    // ✅ After data loaded, apply current search text (live filter)
-                    applySearch();
+                    Query q = db.collection("users")
+                            .whereEqualTo("userType", "renter");
+
+                    if (!TextUtils.isEmpty(activePropertyId)) {
+                        q = q.whereEqualTo("propertyId", activePropertyId);
+                    }
+
+                    q.get()
+                            .addOnSuccessListener(querySnapshot -> {
+                                renterContacts.clear();
+
+                                for (QueryDocumentSnapshot doc : querySnapshot) {
+                                    String id    = doc.getId();
+                                    String name  = doc.getString("name");
+                                    String phone = doc.getString("phone");
+                                    String email = doc.getString("email");
+
+                                    String propertyName = doc.getString("propertyName");
+                                    if (propertyName == null || propertyName.trim().isEmpty()) {
+                                        propertyName = doc.getString("propertyAddress");
+                                    }
+
+                                    Contact c = new Contact(id, name, phone, email, propertyName, false);
+                                    renterContacts.add(c);
+                                }
+
+                                applySearch();
+                            })
+                            .addOnFailureListener(e ->
+                                    Log.e(TAG, "Failed to load renter contacts", e));
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "Failed to load renters", e));
+                .addOnFailureListener(e ->
+                        Log.e(TAG, "Failed to load manager user doc", e));
     }
+
+    // ================== LIST BUILD + SEARCH ==================
 
     private void buildAndShowList(List<Contact> custom, List<Contact> renters) {
         List<ContactListItem> items = new ArrayList<>();
 
-        // Custom contacts section
+        // Custom contacts (from contacts collection)
         if (!custom.isEmpty()) {
-            items.add(ContactListItem.header("Created Contacts"));
+            items.add(ContactListItem.header("Contacts"));
             for (Contact c : custom) {
                 items.add(ContactListItem.contact(c));
             }
         }
 
-        // Group renters by property name
+        // Group renters by property name – only for managers
         Map<String, List<Contact>> byProperty =
                 new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
@@ -230,15 +281,16 @@ public class ContactList extends AppCompatActivity {
             return;
         }
 
-        String query = etSearch.getText().toString().trim().toLowerCase(Locale.ROOT);
+        String query = etSearch.getText().toString()
+                .trim()
+                .toLowerCase(Locale.ROOT);
 
         if (TextUtils.isEmpty(query)) {
-            // No filter → show full list grouped
             buildAndShowList(customContacts, renterContacts);
             return;
         }
 
-        List<Contact> filteredCustom = new ArrayList<>();
+        List<Contact> filteredCustom  = new ArrayList<>();
         List<Contact> filteredRenters = new ArrayList<>();
 
         for (Contact c : customContacts) {

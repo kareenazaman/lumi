@@ -80,5 +80,7 @@
     <string name="role_select_description">Please choose status.</string>
     <string name="renter_label">Renter</string>
     <string name="manager_label">Manager</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

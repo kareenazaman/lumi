@@ -60,8 +60,9 @@ public class SignupActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        // 🔹 If already logged in, route based on role + details
         if (auth.getCurrentUser() != null) {
-            checkUserRole(); // already logged in → check if role selected
+            checkUserRole(); // already logged in → check role + details
         }
     }
 
@@ -123,7 +124,7 @@ public class SignupActivity extends AppCompatActivity {
                                 profile.put("phone", phone);
                                 profile.put("createdAt", Timestamp.now());
                                 profile.put("provider", "password");
-                                // Note: userType not set yet → handled later
+                                // Note: userType not set yet → handled later in Role Select
 
                                 db.collection("users").document(uid)
                                         .set(profile)
@@ -146,7 +147,13 @@ public class SignupActivity extends AppCompatActivity {
                 });
     }
 
-    /** Checks if user has selected a role — if not, go to Role Select page */
+    /**
+     * 🔹 Step 1: Check userType on /users/{uid}
+     * Then:
+     *  - renter  → checkRenterDetails()
+     *  - manager → checkManagerDetails()
+     *  - null    → goToRoleSelect()
+     */
     private void checkUserRole() {
         if (auth.getCurrentUser() == null) return;
         String uid = auth.getCurrentUser().getUid();
@@ -156,23 +163,76 @@ public class SignupActivity extends AppCompatActivity {
                     if (doc != null && doc.exists()) {
                         String userType = doc.getString("userType");
                         if (userType == null || userType.isEmpty()) {
-                            //  Role not chosen yet → open Role Select page
+                            // Role not chosen yet → open Role Select page
                             goToRoleSelect();
+                        } else if (userType.equals("renter")) {
+                            // Renter → check if they are assigned to a property
+                            checkRenterDetails(uid);
+                        } else if (userType.equals("manager")) {
+                            // Manager → check if they own any property
+                            checkManagerDetails(uid);
                         } else {
-                            //  Role already set → route accordingly
-                            if (userType.equals("renter")) {
-                                goToRenterDashboard();
-                            } else if (userType.equals("manager")) {
-                                goToManagerDashboard();
-                            } else {
-                                goToRoleSelect(); // unknown → fallback
-                            }
+                            // Unknown role → fallback
+                            goToRoleSelect();
                         }
                     } else {
                         goToRoleSelect();
                     }
                 })
                 .addOnFailureListener(e -> goToRoleSelect());
+    }
+
+    /**
+     * 🔹 Step 2A: For renters, check if they are assigned to a property.
+     * Assumes RenterAccSetup writes a doc at /renters/{uid} with a "propertyId" field.
+     */
+    private void checkRenterDetails(String uid) {
+        db.collection("renters")
+                .document(uid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc != null && doc.exists()) {
+                        String propertyId = doc.getString("propertyId");
+                        if (!TextUtils.isEmpty(propertyId)) {
+                            // Renter has a property → go to renter dashboard
+                            goToRenterDashboard();
+                        } else {
+                            // No property assigned yet → go to renter account setup
+                            goToRenterAccSetup();
+                        }
+                    } else {
+                        // No renter detail doc → go to renter account setup
+                        goToRenterAccSetup();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On error, safer to force them to fill details
+                    goToRenterAccSetup();
+                });
+    }
+
+    /**
+     * 🔹 Step 2B: For managers, check if they have at least one property.
+     * Checks /properties where ownerUid == uid.
+     */
+    private void checkManagerDetails(String uid) {
+        db.collection("properties")
+                .whereEqualTo("ownerUid", uid)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                        // Manager already has at least one property → go to PM dashboard
+                        goToManagerDashboard();
+                    } else {
+                        // No property yet → go to PM account setup
+                        goToPMAccSetup();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // On error, send them to setup to be safe
+                    goToPMAccSetup();
+                });
     }
 
     private void goToRoleSelect() {
@@ -183,14 +243,31 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     private void goToRenterDashboard() {
-        Intent i = new Intent(SignupActivity.this, DashboardRenter.class);
+        Intent i = new Intent(SignupActivity.this, RenterDashboardContainer.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();
     }
 
+
     private void goToManagerDashboard() {
         Intent i = new Intent(SignupActivity.this, PMDashboardContainer.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(i);
+        finish();
+    }
+
+    // 🔹 New: go to renter setup screen if renter has no property yet
+    private void goToRenterAccSetup() {
+        Intent i = new Intent(SignupActivity.this, RenterAccSetup.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(i);
+        finish();
+    }
+
+    // 🔹 New: go to PM setup screen if manager has no property yet
+    private void goToPMAccSetup() {
+        Intent i = new Intent(SignupActivity.this, PMAccSetup.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();

@@ -16,6 +16,9 @@
         android:theme="@style/Theme.LumiApp"
         tools:targetApi="31">
         <activity
+            android:name=".RenterDashboardContainer"
+            android:exported="false" />
+        <activity
             android:name=".PropertyDetailsActivity"
             android:exported="false" />
         <activity
