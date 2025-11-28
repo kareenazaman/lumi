@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/lumiapp/FixRequestAdapter.java
 package com.example.lumiapp;
 
 import android.view.LayoutInflater;
@@ -14,20 +15,20 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.Locale;
 
-public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.VH> {
+public class FixRequestAdapter extends RecyclerView.Adapter<FixRequestAdapter.VH> {
 
     public interface OnItemClick {
-        void onClick(Complaint c);
+        void onClick(FixRequest f);
     }
 
-    private final ArrayList<Complaint> items = new ArrayList<>();
+    private final ArrayList<FixRequest> items = new ArrayList<>();
     private final OnItemClick click;
 
-    public ComplaintAdapter(OnItemClick click) {
+    public FixRequestAdapter(OnItemClick click) {
         this.click = click;
     }
 
-    public void setItems(@NonNull java.util.List<Complaint> list) {
+    public void setItems(@NonNull java.util.List<FixRequest> list) {
         items.clear();
         items.addAll(list);
         notifyDataSetChanged();
@@ -38,32 +39,32 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.VH> 
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater
                 .from(parent.getContext())
-                .inflate(R.layout.item_complaint, parent, false);
+                .inflate(R.layout.item_complaint, parent, false); // reuse same row layout
         return new VH(v);
     }
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int position) {
-        Complaint c = items.get(position);
+        FixRequest f = items.get(position);
 
-        // Title: "Complaint #ABC123"
-        String shortId = c.shortId;
-        if ((shortId == null || shortId.isEmpty()) && c.id != null && c.id.length() >= 6) {
-            shortId = c.id.substring(0, 6).toUpperCase(Locale.US);
+        // Title: "Fix Request #ABC123"
+        String shortId = f.shortId;
+        if ((shortId == null || shortId.isEmpty()) && f.id != null && f.id.length() >= 6) {
+            shortId = f.id.substring(0, 6).toUpperCase(Locale.US);
         }
-        h.tvTitle.setText("Complaint #" + (shortId != null ? shortId : "—"));
+        h.tvTitle.setText("Fix Request #" + (shortId != null ? shortId : "—"));
 
         // Date
-        h.tvDate.setText(c.createdDate != null ? c.createdDate : "—");
+        h.tvDate.setText(f.createdDate != null ? f.createdDate : "—");
 
         // Room chip
-        h.tvRoomChip.setText(c.roomNumber != null ? c.roomNumber : "—");
+        h.tvRoomChip.setText(f.roomNumber != null ? f.roomNumber : "—");
 
         // Property
-        h.tvProperty.setText(c.propertyAddress != null ? c.propertyAddress : "—");
+        h.tvProperty.setText(f.propertyAddress != null ? f.propertyAddress : "—");
 
-        // Status + pill background
-        String st = c.status != null ? c.status.toLowerCase(Locale.US) : "open";
+        // Status text + background pill
+        String st = f.status != null ? f.status.toLowerCase(Locale.US) : "open";
         h.tvStatus.setText(st);
         if ("closed".equals(st)) {
             h.tvStatus.setBackgroundResource(R.drawable.bg_status_closed);
@@ -73,22 +74,20 @@ public class ComplaintAdapter extends RecyclerView.Adapter<ComplaintAdapter.VH> 
             h.tvStatus.setBackgroundResource(R.drawable.bg_status_open);
         }
 
-        // 🔹 Image or placeholder
-        if (c.imageUrl != null && !c.imageUrl.isEmpty()) {
+        // Thumbnail image
+        if (f.imageUrl != null && !f.imageUrl.isEmpty()) {
+            h.ivComplaintImage.setVisibility(View.VISIBLE);
             Glide.with(h.itemView.getContext())
-                    .load(c.imageUrl)
+                    .load(f.imageUrl)
                     .centerCrop()
-                    .placeholder(R.drawable.ic_complaint_placeholder)
-                    .error(R.drawable.ic_complaint_placeholder)
                     .into(h.ivComplaintImage);
         } else {
-            // No image uploaded → show placeholder
-            h.ivComplaintImage.setImageResource(R.drawable.ic_complaint_placeholder);
+            h.ivComplaintImage.setVisibility(View.GONE);
         }
 
         // Row click
         h.itemView.setOnClickListener(v -> {
-            if (click != null) click.onClick(c);
+            if (click != null) click.onClick(f);
         });
     }
 

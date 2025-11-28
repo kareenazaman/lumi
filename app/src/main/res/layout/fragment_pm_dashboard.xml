@@ -106,7 +106,7 @@
             android:orientation="vertical">
 
             <ImageView
-                android:id="@+id/fix_page_btn"
+                android:id="@+id/fix_request_page_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="10dp"

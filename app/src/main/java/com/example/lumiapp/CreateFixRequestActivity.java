@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/lumiapp/CreateFixRequestActivity.java
 package com.example.lumiapp;
 
 import android.app.ProgressDialog;
@@ -5,8 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.view.View;
-import android.widget.ArrayAdapter;
+import android.text.TextUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -33,21 +33,22 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public class CreateComplaint extends AppCompatActivity {
+public class CreateFixRequestActivity extends AppCompatActivity {
 
-    private static final int REQUEST_IMAGE_PICK = 1001;
+    private static final int REQUEST_IMAGE_PICK = 2001;
 
+    // Header + fields
     private TextView tvCreatedBy, tvRoomChip, tvPropertyAddress, tvDate, tvTitle;
     private TextInputEditText etDesc;
     private TextInputLayout tilProperty, tilDesc;
     private MaterialAutoCompleteTextView actProperty;
-    private MaterialButton btnCreate;
+    private MaterialButton btnCreateFix;
     private ImageButton backBtn;
 
     // Upload card views
-    private FrameLayout uploadComplaintImage;
-    private ImageView imgComplaintPreview;
-    private TextView tvComplaintPlus;
+    private FrameLayout uploadFixImage;
+    private ImageView imgFixPreview;
+    private TextView tvFixPlus;
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
@@ -58,7 +59,7 @@ public class CreateComplaint extends AppCompatActivity {
     private String userId;
     private String userName;
 
-    // renter fields (optional for manager)
+    // renter/manager fields
     private String roomNumber;
     private String propertyId;       // set from dropdown (manager) or user doc (renter)
     private String propertyAddress;  // name/address shown
@@ -72,11 +73,18 @@ public class CreateComplaint extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_create_complaint);
+        setContentView(R.layout.activity_create_fix_request);
 
         auth = FirebaseAuth.getInstance();
         db   = FirebaseFirestore.getInstance();
         storageRef = FirebaseStorage.getInstance().getReference();
+
+        if (auth.getCurrentUser() == null) {
+            Toast.makeText(this, "You must be logged in", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        userId = auth.getCurrentUser().getUid();
 
         bindViews();
         fillStaticDate();
@@ -85,65 +93,87 @@ public class CreateComplaint extends AppCompatActivity {
     }
 
     private void bindViews() {
-        tvTitle = findViewById(R.id.tvTitle);
-        tvCreatedBy = findViewById(R.id.tvCreatedBy);
-        tvRoomChip = findViewById(R.id.tvRoomChip);
+        tvTitle           = findViewById(R.id.tvTitle);
+        tvCreatedBy       = findViewById(R.id.tvCreatedBy);
+        tvRoomChip        = findViewById(R.id.tvRoomChip);
         tvPropertyAddress = findViewById(R.id.tvPropertyAddress);
-        tvDate = findViewById(R.id.tvDate);
-        etDesc = findViewById(R.id.etDesc);
-        tilDesc = findViewById(R.id.tilDesc);
+        tvDate            = findViewById(R.id.tvDate);
+
+        etDesc      = findViewById(R.id.etDesc);
+        tilDesc     = findViewById(R.id.tilDesc);
         tilProperty = findViewById(R.id.tilProperty);
         actProperty = findViewById(R.id.actProperty);
-        btnCreate = findViewById(R.id.btnCreateComplaint);
-        backBtn = findViewById(R.id.back_btn);
 
-        // Card-style uploader
-        uploadComplaintImage = findViewById(R.id.uploadComplaintImage);
-        imgComplaintPreview = findViewById(R.id.imgComplaintPreview);
-        tvComplaintPlus = findViewById(R.id.tvComplaintPlus);
+        btnCreateFix = findViewById(R.id.btnCreateFix);
+        backBtn      = findViewById(R.id.back_btn);
 
-        if (tvTitle != null) tvTitle.setText("Create Complaint");
+        uploadFixImage = findViewById(R.id.uploadFixImage);
+        imgFixPreview  = findViewById(R.id.imgFixPreview);
+        tvFixPlus      = findViewById(R.id.tvFixPlus);
+
+        if (tvTitle != null) {
+            tvTitle.setText("Create Fix Request");
+        }
     }
 
     private void fillStaticDate() {
-        String today = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-                .format(System.currentTimeMillis());
-        tvDate.setText(today);
+        if (tvDate != null) {
+            String today = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+                    .format(System.currentTimeMillis());
+            tvDate.setText(today);
+        }
     }
 
     @SuppressWarnings("unchecked")
     private void loadUserProfileThenSetupUI() {
-        if (auth.getCurrentUser() == null) { finish(); return; }
-        userId = auth.getCurrentUser().getUid();
-
         db.collection("users").document(userId).get().addOnSuccessListener(snap -> {
             role = snap.getString("userType");  // "manager" or "renter"
             if (role == null) role = "renter";
 
-            // createdBy = NAME, not email
+            // Use NAME, not email
             userName = snap.getString("name");
-            tvCreatedBy.setText(userName != null ? userName : "—");
+            if (TextUtils.isEmpty(userName) && auth.getCurrentUser() != null) {
+                userName = auth.getCurrentUser().getEmail(); // fallback only
+            }
+            if (tvCreatedBy != null) {
+                tvCreatedBy.setText(userName != null ? userName : "—");
+            }
 
             if ("manager".equalsIgnoreCase(role)) {
-                // Property manager has no room, so show this label
-                tvRoomChip.setText("Property Manager");
-                tvPropertyAddress.setVisibility(View.GONE);
-                tilProperty.setVisibility(View.VISIBLE);
+                // Property manager has no room → label as such
+                if (tvRoomChip != null) {
+                    tvRoomChip.setText("Property Manager");
+                }
 
-                // Use managerOf list if present, fallback to ownerUid
+                // For managers, we hide static address text and show dropdown
+                if (tvPropertyAddress != null) {
+                    tvPropertyAddress.setVisibility(TextView.GONE);
+                }
+                if (tilProperty != null) {
+                    tilProperty.setVisibility(TextInputLayout.VISIBLE);
+                }
+
                 java.util.List<String> managerOf = (java.util.List<String>) snap.get("managerOf");
                 loadManagerProperties(userId, managerOf);
 
             } else {
-                // renter fields
-                roomNumber = snap.getString("roomNumber");
-                propertyId = snap.getString("propertyId");
+                // renter fields from user doc
+                roomNumber      = snap.getString("roomNumber");
+                propertyId      = snap.getString("propertyId");
                 propertyAddress = snap.getString("propertyAddress");
 
-                tvRoomChip.setText(roomNumber != null ? roomNumber : "—");
-                tvPropertyAddress.setText(propertyAddress != null ? propertyAddress : "—");
-                tvPropertyAddress.setVisibility(View.VISIBLE);
-                tilProperty.setVisibility(View.GONE);
+                if (tvRoomChip != null) {
+                    tvRoomChip.setText(roomNumber != null ? roomNumber : "—");
+                }
+                if (tvPropertyAddress != null) {
+                    tvPropertyAddress.setText(propertyAddress != null ? propertyAddress : "—");
+                    tvPropertyAddress.setVisibility(TextView.VISIBLE);
+                }
+
+                // renter should NOT pick property manually
+                if (tilProperty != null) {
+                    tilProperty.setVisibility(TextInputLayout.GONE);
+                }
             }
         }).addOnFailureListener(e -> {
             Toast.makeText(this, "Failed to load user: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -161,7 +191,6 @@ public class CreateComplaint extends AppCompatActivity {
         propertyIds.clear();
 
         if (managerOf != null && !managerOf.isEmpty()) {
-            // Use managerOf array (IDs) → whereIn on documentId
             if (managerOf.size() <= 10) {
                 db.collection("properties")
                         .whereIn(FieldPath.documentId(), managerOf)
@@ -177,7 +206,6 @@ public class CreateComplaint extends AppCompatActivity {
                             bindPropertyAdapter();
                         });
             } else {
-                // If >10, fetch one-by-one
                 final int total = managerOf.size();
                 final int[] done = {0};
 
@@ -192,7 +220,6 @@ public class CreateComplaint extends AppCompatActivity {
                 }
             }
         } else {
-            // Fallback: query by ownerUid
             db.collection("properties")
                     .whereEqualTo("ownerUid", ownerUid)
                     .get()
@@ -211,27 +238,35 @@ public class CreateComplaint extends AppCompatActivity {
 
     private void addPropertyToLists(com.google.firebase.firestore.DocumentSnapshot d) {
         if (d == null || !d.exists()) return;
-        String pid = d.getId();
+        String pid  = d.getId();
         String name = d.getString("name");
         String addr = d.getString("address");
 
         propertyIds.add(pid);
-        propertyNames.add(name != null && !name.isEmpty() ? name :
-                (addr != null && !addr.isEmpty() ? addr : pid));
+        propertyNames.add(
+                name != null && !name.isEmpty()
+                        ? name
+                        : (addr != null && !addr.isEmpty() ? addr : pid)
+        );
     }
 
     private void bindPropertyAdapter() {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, propertyNames);
+        if (actProperty == null) return;
+
+        ArrayList<String> names = new ArrayList<>(propertyNames);
+
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(
+                this,
+                android.R.layout.simple_list_item_1,
+                names
+        );
         actProperty.setAdapter(adapter);
 
-        // Force dropdown to open when clicked
         actProperty.setOnClickListener(v -> actProperty.showDropDown());
 
-        // Preselect first property (so propertyId is never null if there is at least one)
         if (!propertyIds.isEmpty()) {
             actProperty.setText(propertyNames.get(0), false);
-            propertyId = propertyIds.get(0);
+            propertyId      = propertyIds.get(0);
             propertyAddress = propertyNames.get(0);
         } else {
             propertyId = null;
@@ -239,41 +274,57 @@ public class CreateComplaint extends AppCompatActivity {
         }
 
         actProperty.setOnItemClickListener((parent, view, position, id) -> {
-            propertyId = propertyIds.get(position);
+            propertyId      = propertyIds.get(position);
             propertyAddress = propertyNames.get(position);
         });
     }
 
     private void setListeners() {
-        backBtn.setOnClickListener(v -> finish());
-
-        // Click dashed card area to pick image
-        if (uploadComplaintImage != null) {
-            uploadComplaintImage.setOnClickListener(v -> openImagePicker());
+        if (backBtn != null) {
+            backBtn.setOnClickListener(v -> finish());
         }
 
-        btnCreate.setOnClickListener(v -> {
-            String desc = etDesc.getText() != null ? etDesc.getText().toString().trim() : "";
-            if (desc.isEmpty()) {
-                tilDesc.setError("Description required");
-                return;
-            } else {
-                tilDesc.setError(null);
-            }
+        if (uploadFixImage != null) {
+            uploadFixImage.setOnClickListener(v -> openImagePicker());
+        }
 
-            if ("manager".equalsIgnoreCase(role) && (propertyId == null || propertyId.isEmpty())) {
-                tilProperty.setError("Select a property");
-                return;
-            } else {
-                tilProperty.setError(null);
-            }
+        if (btnCreateFix != null) {
+            btnCreateFix.setOnClickListener(v -> {
+                String desc = etDesc != null && etDesc.getText() != null
+                        ? etDesc.getText().toString().trim()
+                        : "";
 
-            saveComplaint(desc);
-        });
+                if (TextUtils.isEmpty(desc)) {
+                    if (tilDesc != null) {
+                        tilDesc.setError("Description required");
+                    }
+                    if (etDesc != null) {
+                        etDesc.requestFocus();
+                    }
+                    return;
+                } else if (tilDesc != null) {
+                    tilDesc.setError(null);
+                }
+
+                if ("manager".equalsIgnoreCase(role)
+                        && (propertyId == null || propertyId.isEmpty())
+                        && tilProperty != null) {
+                    tilProperty.setError("Select a property");
+                    return;
+                } else if (tilProperty != null) {
+                    tilProperty.setError(null);
+                }
+
+                saveFixRequest(desc);
+            });
+        }
     }
 
     private void openImagePicker() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        Intent intent = new Intent(
+                Intent.ACTION_PICK,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        );
         intent.setType("image/*");
         startActivityForResult(intent, REQUEST_IMAGE_PICK);
     }
@@ -284,55 +335,60 @@ public class CreateComplaint extends AppCompatActivity {
 
         if (requestCode == REQUEST_IMAGE_PICK && resultCode == RESULT_OK && data != null) {
             imageUri = data.getData();
-            if (imageUri != null) {
-                imgComplaintPreview.setVisibility(View.VISIBLE);
-                imgComplaintPreview.setImageURI(imageUri);
-                tvComplaintPlus.setVisibility(View.GONE);
+            if (imageUri != null && imgFixPreview != null && tvFixPlus != null) {
+                imgFixPreview.setVisibility(ImageView.VISIBLE);
+                tvFixPlus.setVisibility(TextView.GONE);
+                imgFixPreview.setImageURI(imageUri);
             }
         }
     }
 
-    private void saveComplaint(String description) {
+    private void saveFixRequest(String description) {
         if (imageUri != null) {
-            uploadImageAndSaveComplaint(description);
+            uploadImageAndSaveFix(description);
         } else {
-            saveComplaintToFirestore(description, null);
+            saveFixToFirestore(description, null);
         }
     }
 
-    private void uploadImageAndSaveComplaint(String description) {
+    private void uploadImageAndSaveFix(String description) {
         ProgressDialog progress = new ProgressDialog(this);
         progress.setMessage("Uploading image...");
         progress.setCancelable(false);
         progress.show();
 
-        String fileName = "complaintImages/" + userId + "_" + System.currentTimeMillis() + ".jpg";
+        String fileName = "fixRequestImages/" + userId + "_" + System.currentTimeMillis() + ".jpg";
         StorageReference imgRef = storageRef.child(fileName);
 
-        btnCreate.setEnabled(false);
+        if (btnCreateFix != null) {
+            btnCreateFix.setEnabled(false);
+        }
 
         imgRef.putFile(imageUri)
                 .addOnSuccessListener(taskSnapshot ->
                         imgRef.getDownloadUrl().addOnSuccessListener(uri -> {
                             progress.dismiss();
-                            saveComplaintToFirestore(description, uri.toString());
+                            saveFixToFirestore(description, uri.toString());
                         }).addOnFailureListener(e -> {
                             progress.dismiss();
-                            btnCreate.setEnabled(true);
+                            if (btnCreateFix != null) btnCreateFix.setEnabled(true);
                             Toast.makeText(this, "Failed to get image URL", Toast.LENGTH_LONG).show();
                         })
                 )
                 .addOnFailureListener(e -> {
                     progress.dismiss();
-                    btnCreate.setEnabled(true);
+                    if (btnCreateFix != null) btnCreateFix.setEnabled(true);
                     Toast.makeText(this, "Image upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }
 
-    private void saveComplaintToFirestore(String description, @Nullable String imageUrl) {
+    /**
+     * Save into collection "fixRequests"
+     */
+    private void saveFixToFirestore(String description, @Nullable String imageUrl) {
         Map<String, Object> data = new HashMap<>();
         data.put("createdAt", Timestamp.now());
-        data.put("createdDate", tvDate.getText().toString());
+        data.put("createdDate", tvDate != null ? tvDate.getText().toString() : null);
         data.put("createdById", userId);
         data.put("createdByName", userName);
         data.put("createdByRole", role != null ? role : "renter");
@@ -353,18 +409,14 @@ public class CreateComplaint extends AppCompatActivity {
             data.put("propertyAddress", propertyAddress);
         }
 
-        db.collection("complaints").add(data)
+        db.collection("fixRequests").add(data)
                 .addOnSuccessListener(ref -> {
-                    String id = ref.getId();
-                    String shortId = id.length() >= 6 ? id.substring(0, 6).toUpperCase(Locale.US) : id;
-                    ref.update("id", id, "shortId", shortId);
-
-                    Toast.makeText(this, "Complaint created #" + shortId, Toast.LENGTH_LONG).show();
-                    btnCreate.setEnabled(true);
+                    Toast.makeText(this, "Fix request submitted", Toast.LENGTH_LONG).show();
+                    if (btnCreateFix != null) btnCreateFix.setEnabled(true);
                     finish();
                 })
                 .addOnFailureListener(e -> {
-                    btnCreate.setEnabled(true);
+                    if (btnCreateFix != null) btnCreateFix.setEnabled(true);
                     Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 });
     }

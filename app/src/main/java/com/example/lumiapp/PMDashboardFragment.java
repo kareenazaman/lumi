@@ -28,7 +28,7 @@ public class PMDashboardFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        // Inflate the layout for this fragment (use the same XML as before)
+        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_pm_dashboard, container, false);
 
         // Setup RecyclerView
@@ -65,17 +65,32 @@ public class PMDashboardFragment extends Fragment {
         );
 
         // Create adapter
-        PMDashboardRecentItems_Adapter adapter = new PMDashboardRecentItems_Adapter(data, item -> {
-            // TODO: handle click event (navigate or show details)
-        });
+        PMDashboardRecentItems_Adapter adapter = new PMDashboardRecentItems_Adapter(
+                data,
+                item -> {
+                    // later you can hook this to open complaint/fix detail if needed
+                }
+        );
 
         // Attach adapter to RecyclerView
         rv.setAdapter(adapter);
 
+        // 🔹 Complaints list button → open ComplaintList
         ImageView complaintsBtn = view.findViewById(R.id.complaint_page_btn);
         if (complaintsBtn != null) {
-            complaintsBtn.setOnClickListener(v ->
-                    startActivity(new Intent(requireContext(), ComplaintList.class)));
+            complaintsBtn.setOnClickListener(v -> {
+                Intent i = new Intent(requireContext(), ComplaintList.class);
+                startActivity(i);
+            });
+        }
+
+        // 🔹 Fix requests list button → open FixRequestList
+        ImageView fixBtn = view.findViewById(R.id.fix_request_page_btn);
+        if (fixBtn != null) {
+            fixBtn.setOnClickListener(v -> {
+                Intent i = new Intent(requireContext(), FixRequestList.class);
+                startActivity(i);
+            });
         }
 
         return view;

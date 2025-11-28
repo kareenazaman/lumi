@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/lumiapp/FixRequestList.java
 package com.example.lumiapp;
 
 import android.content.Intent;
@@ -22,15 +23,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class ComplaintList extends AppCompatActivity {
+public class FixRequestList extends AppCompatActivity {
 
-    private static final String TAG = "Complaints";
+    private static final String TAG = "FixRequests";
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
-    private RecyclerView rvComplaint;
-    private ComplaintAdapter adapter;
+    private RecyclerView rvFix;
+    private FixRequestAdapter adapter;
 
     private MaterialButton btnCreate;
     private ImageButton backBtn;
@@ -44,36 +45,45 @@ public class ComplaintList extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Reuse complaints list layout
         setContentView(R.layout.activity_complains_list);
 
         auth = FirebaseAuth.getInstance();
         db   = FirebaseFirestore.getInstance();
 
-        // 🔹 Make sure header says "Complaints"
+        // Header text → "Fix Requests"
         TextView recentHeader = findViewById(R.id.recentHeader);
         if (recentHeader != null) {
-            recentHeader.setText(getString(R.string.complains));
+            recentHeader.setText("Fix Requests");
         }
 
-        rvComplaint = findViewById(R.id.rvComplaint);
-        rvComplaint.setLayoutManager(new LinearLayoutManager(this));
+        rvFix = findViewById(R.id.rvComplaint);
+        rvFix.setLayoutManager(new LinearLayoutManager(this));
 
-        adapter = new ComplaintAdapter(c -> {
-            Intent i = new Intent(this, ComplaintDetailActivity.class);
-            i.putExtra(ComplaintDetailActivity.EXTRA_COMPLAINT_ID, c.id);
+        adapter = new FixRequestAdapter(f -> {
+            Intent i = new Intent(this, FixRequestDetailActivity.class);
+            i.putExtra(FixRequestDetailActivity.EXTRA_FIX_ID, f.id);
             startActivity(i);
         });
-        rvComplaint.setAdapter(adapter);
+        rvFix.setAdapter(adapter);
 
         btnCreate = findViewById(R.id.create_complain);
         backBtn   = findViewById(R.id.back_btn);
 
-        btnCreate.setOnClickListener(v ->
-                startActivity(new Intent(this, CreateComplaint.class))
-        );
-        backBtn.setOnClickListener(v -> finish());
+        if (btnCreate != null) {
+            btnCreate.setText("Create Fix Request");
+            btnCreate.setOnClickListener(v ->
+                    startActivity(new Intent(this, CreateFixRequestActivity.class)));
+        }
 
-        if (auth.getCurrentUser() == null) { finish(); return; }
+        if (backBtn != null) {
+            backBtn.setOnClickListener(v -> finish());
+        }
+
+        if (auth.getCurrentUser() == null) {
+            finish();
+            return;
+        }
         userId = auth.getCurrentUser().getUid();
 
         loadUserRoleThenListen();
@@ -88,7 +98,10 @@ public class ComplaintList extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        if (renterReg != null) { renterReg.remove(); renterReg = null; }
+        if (renterReg != null) {
+            renterReg.remove();
+            renterReg = null;
+        }
         for (ListenerRegistration r : managerRegs) r.remove();
         managerRegs.clear();
     }
@@ -99,29 +112,34 @@ public class ComplaintList extends AppCompatActivity {
                     role = snap.getString("userType");
                     if (role == null) role = "renter";
 
-                    if (renterReg != null) { renterReg.remove(); renterReg = null; }
+                    // clear existing listeners
+                    if (renterReg != null) {
+                        renterReg.remove();
+                        renterReg = null;
+                    }
                     for (ListenerRegistration r : managerRegs) r.remove();
                     managerRegs.clear();
 
                     if ("manager".equalsIgnoreCase(role)) {
                         @SuppressWarnings("unchecked")
                         List<String> managerOf = (List<String>) snap.get("managerOf");
-                        loadManagerComplaintsOnce(managerOf);
+                        loadManagerFixesOnce(managerOf);
                     } else {
-                        listenRenterComplaints();
+                        listenRenterFixes();
                     }
                 })
                 .addOnFailureListener(e -> Log.e(TAG, "loadUserRole failed", e));
     }
 
-    private void loadManagerComplaintsOnce(@Nullable List<String> propertyIds) {
+    // Manager: one-time load
+    private void loadManagerFixesOnce(@Nullable List<String> propertyIds) {
         if (propertyIds == null || propertyIds.isEmpty()) {
             adapter.setItems(new ArrayList<>());
-            Log.d(TAG, "Manager has no properties");
+            Log.d(TAG, "Manager has no properties (fixRequests)");
             return;
         }
 
-        final ArrayList<Complaint> all = new ArrayList<>();
+        final ArrayList<FixRequest> all = new ArrayList<>();
         final int step = 10;
         final int totalBatches = (int) Math.ceil(propertyIds.size() / (double) step);
         final int[] done = {0};
@@ -130,21 +148,21 @@ public class ComplaintList extends AppCompatActivity {
             int end = Math.min(i + step, propertyIds.size());
             List<String> sub = propertyIds.subList(i, end);
 
-            db.collection("complaints")
+            db.collection("fixRequests")
                     .whereIn("propertyId", sub)
                     .get()
                     .addOnSuccessListener(qs -> {
                         for (QueryDocumentSnapshot d : qs) {
-                            Complaint c = d.toObject(Complaint.class);
-                            if (c == null) continue;
-                            c.id = d.getId();
-                            if (c.shortId == null && c.id.length() >= 6) {
-                                c.shortId = c.id.substring(0,6).toUpperCase(Locale.US);
+                            FixRequest f = d.toObject(FixRequest.class);
+                            if (f == null) continue;
+                            f.id = d.getId();
+                            if (f.shortId == null && f.id.length() >= 6) {
+                                f.shortId = f.id.substring(0, 6).toUpperCase(Locale.US);
                             }
-                            all.add(c);
+                            all.add(f);
                         }
                         if (++done[0] == totalBatches) {
-                            all.sort((a,b) -> {
+                            all.sort((a, b) -> {
                                 long la = a.createdAt != null ? a.createdAt.toDate().getTime() : 0L;
                                 long lb = b.createdAt != null ? b.createdAt.toDate().getTime() : 0L;
                                 return Long.compare(lb, la);
@@ -153,54 +171,59 @@ public class ComplaintList extends AppCompatActivity {
                         }
                     })
                     .addOnFailureListener(e -> {
-                        Log.e(TAG, "Manager batch load failed", e);
+                        Log.e(TAG, "Manager batch load failed (fixRequests)", e);
                         if (++done[0] == totalBatches) adapter.setItems(all);
                     });
         }
     }
 
-    private void listenRenterComplaints() {
-        renterReg = db.collection("complaints")
+    // Renter realtime
+    private void listenRenterFixes() {
+        renterReg = db.collection("fixRequests")
                 .whereEqualTo("createdById", userId)
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .addSnapshotListener((qs, e) -> {
                     if (e != null) {
-                        Log.e(TAG, "Renter listen failed, fallback", e);
+                        Log.e(TAG, "Renter listen failed (fixRequests). Falling back.", e);
                         fallbackRenterLoad();
                         return;
                     }
-                    if (qs == null) { adapter.setItems(new ArrayList<>()); return; }
-                    ArrayList<Complaint> list = new ArrayList<>();
+                    if (qs == null) {
+                        adapter.setItems(new ArrayList<>());
+                        return;
+                    }
+
+                    ArrayList<FixRequest> list = new ArrayList<>();
                     for (QueryDocumentSnapshot d : qs) {
-                        Complaint c = d.toObject(Complaint.class);
-                        if (c == null) continue;
-                        c.id = d.getId();
-                        if (c.shortId == null && c.id.length() >= 6) {
-                            c.shortId = c.id.substring(0,6).toUpperCase(Locale.US);
+                        FixRequest f = d.toObject(FixRequest.class);
+                        if (f == null) continue;
+                        f.id = d.getId();
+                        if (f.shortId == null && f.id.length() >= 6) {
+                            f.shortId = f.id.substring(0, 6).toUpperCase(Locale.US);
                         }
-                        list.add(c);
+                        list.add(f);
                     }
                     adapter.setItems(list);
                 });
     }
 
     private void fallbackRenterLoad() {
-        db.collection("complaints")
+        db.collection("fixRequests")
                 .whereEqualTo("createdById", userId)
                 .get()
                 .addOnSuccessListener(qs -> {
-                    ArrayList<Complaint> list = new ArrayList<>();
+                    ArrayList<FixRequest> list = new ArrayList<>();
                     for (QueryDocumentSnapshot d : qs) {
-                        Complaint c = d.toObject(Complaint.class);
-                        if (c == null) continue;
-                        c.id = d.getId();
-                        if (c.shortId == null && c.id.length() >= 6) {
-                            c.shortId = c.id.substring(0,6).toUpperCase(Locale.US);
+                        FixRequest f = d.toObject(FixRequest.class);
+                        if (f == null) continue;
+                        f.id = d.getId();
+                        if (f.shortId == null && f.id.length() >= 6) {
+                            f.shortId = f.id.substring(0, 6).toUpperCase(Locale.US);
                         }
-                        list.add(c);
+                        list.add(f);
                     }
                     adapter.setItems(list);
                 })
-                .addOnFailureListener(e -> Log.e(TAG, "Fallback renter load failed", e));
+                .addOnFailureListener(e -> Log.e(TAG, "Fallback renter load (fixRequests) failed", e));
     }
 }

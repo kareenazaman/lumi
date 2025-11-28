@@ -2,7 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/create_complain_page"
+    android:id="@+id/create_fix_page"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F3F6F5">
@@ -32,7 +32,7 @@
 
     <!-- Card form -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/complaints_form"
+        android:id="@+id/fix_form"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="24dp"
@@ -55,20 +55,20 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <!-- Title: Complain #ABC123 -->
+                <!-- Title -->
                 <TextView
                     android:id="@+id/tvTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingBottom="8dp"
-                    android:text="Complain #—"
+                    android:text="Create Fix Request"
                     android:textColor="#2D3A36"
                     android:textSize="28sp"
                     android:textStyle="bold" />
 
-                <!-- Uploader card for complaint image -->
+                <!-- Uploader card for FIX image -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/cardUploadComplaint"
+                    android:id="@+id/cardUploadFix"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
@@ -92,7 +92,7 @@
 
                         <!-- Dashed drop zone -->
                         <FrameLayout
-                            android:id="@+id/uploadComplaintImage"
+                            android:id="@+id/uploadFixImage"
                             android:layout_width="match_parent"
                             android:layout_height="150dp"
                             android:layout_marginTop="8dp"
@@ -103,7 +103,7 @@
 
                             <!-- Image preview -->
                             <ImageView
-                                android:id="@+id/imgComplaintPreview"
+                                android:id="@+id/imgFixPreview"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:scaleType="centerCrop"
@@ -111,7 +111,7 @@
 
                             <!-- + text stays on top until an image is selected -->
                             <TextView
-                                android:id="@+id/tvComplaintPlus"
+                                android:id="@+id/tvFixPlus"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="center"
@@ -196,7 +196,7 @@
                     android:textSize="18sp"
                     android:visibility="gone" />
 
-                <!-- For PM: dropdown -->
+                <!-- For PM: dropdown (shown only for managers) -->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilProperty"
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
@@ -227,7 +227,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingTop="12dp"
-                    android:text="Date created:"
+                    android:text="Date:"
                     android:textColor="#7A8B86"
                     android:textSize="16sp" />
 
@@ -251,7 +251,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingTop="12dp"
-                    android:text="Description:"
+                    android:text="Describe the issue:"
                     android:textColor="#7A8B86"
                     android:textSize="16sp" />
 
@@ -260,7 +260,7 @@
                     style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Describe the issue">
+                    android:hint="What needs to be fixed?">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etDesc"
@@ -275,11 +275,11 @@
 
                 <!-- Submit -->
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCreateComplaint"
+                    android:id="@+id/btnCreateFix"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Create Complaint"
+                    android:text="Submit Fix Request"
                     app:icon="@drawable/plus_solid"
                     app:iconGravity="textStart"
                     app:iconPadding="8dp"

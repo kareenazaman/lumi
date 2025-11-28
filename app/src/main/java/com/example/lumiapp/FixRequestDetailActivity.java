@@ -1,7 +1,9 @@
+// app/src/main/java/com/example/lumiapp/FixRequestDetailActivity.java
 package com.example.lumiapp;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageButton;
@@ -17,35 +19,34 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.Locale;
 
-public class ComplaintDetailActivity extends AppCompatActivity {
+public class FixRequestDetailActivity extends AppCompatActivity {
 
-    public static final String EXTRA_COMPLAINT_ID = "complaintId";
+    public static final String EXTRA_FIX_ID = "fixId";
 
     private ImageButton backBtn;
     private TextView tvTitle, tvCreatedBy, tvRoomChip, tvDate, tvDesc, tvProperty;
     private MaterialButton btnStatus, btnDelete;
-    private ImageView ivComplaintImage; // optional detail image
+    private ImageView ivComplaintImage;
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
-    private String complaintId;
-    private Complaint complaint;   // model
+    private String fixId;
+    private FixRequest fix;
     private String myUid;
-    private String myRole;         // "renter" | "manager"
+    private String myRole;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_complaint_detail);
+        setContentView(R.layout.activity_complaint_detail); // reuse complaint detail layout
 
-        complaintId = getIntent().getStringExtra(EXTRA_COMPLAINT_ID);
-        if (complaintId == null || complaintId.isEmpty()) {
+        fixId = getIntent().getStringExtra(EXTRA_FIX_ID);
+        if (fixId == null || fixId.isEmpty()) {
             finish();
             return;
         }
@@ -56,7 +57,7 @@ public class ComplaintDetailActivity extends AppCompatActivity {
 
         bindViews();
         wireClicks();
-        loadUserRoleThenComplaint();
+        loadUserRoleThenFix();
     }
 
     private void bindViews() {
@@ -69,8 +70,6 @@ public class ComplaintDetailActivity extends AppCompatActivity {
         tvProperty = findViewById(R.id.tvProperty);
         btnStatus = findViewById(R.id.btnStatus);
         btnDelete = findViewById(R.id.btnDelete);
-
-        // Image may or may not exist in XML; keep it nullable-safe
         ivComplaintImage = findViewById(R.id.ivComplaintImage);
     }
 
@@ -78,7 +77,7 @@ public class ComplaintDetailActivity extends AppCompatActivity {
         backBtn.setOnClickListener(v -> finish());
 
         btnStatus.setOnClickListener(v -> {
-            if (complaint == null) return;
+            if (fix == null) return;
             if (!"manager".equalsIgnoreCase(myRole)) {
                 Toast.makeText(this, "Only managers can update status", Toast.LENGTH_SHORT).show();
                 return;
@@ -87,19 +86,19 @@ public class ComplaintDetailActivity extends AppCompatActivity {
         });
 
         btnDelete.setOnClickListener(v -> {
-            if (complaint == null) return;
+            if (fix == null) return;
 
             boolean canDelete = "manager".equalsIgnoreCase(myRole) ||
-                    (myUid != null && myUid.equals(complaint.createdById));
+                    (myUid != null && myUid.equals(fix.createdById));
             if (!canDelete) {
                 Toast.makeText(this, "You don't have permission to delete", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             new AlertDialog.Builder(this)
-                    .setTitle("Delete complaint")
-                    .setMessage("Are you sure you want to delete this complaint?")
-                    .setPositiveButton("Delete", (d, w) -> deleteComplaint())
+                    .setTitle("Delete fix request")
+                    .setMessage("Are you sure you want to delete this request?")
+                    .setPositiveButton("Delete", (d, w) -> deleteFix())
                     .setNegativeButton("Cancel", null)
                     .show();
         });
@@ -118,95 +117,81 @@ public class ComplaintDetailActivity extends AppCompatActivity {
         menu.show();
     }
 
-    private void loadUserRoleThenComplaint() {
-        if (myUid == null) {
-            finish();
-            return;
-        }
+    private void loadUserRoleThenFix() {
+        if (myUid == null) { finish(); return; }
 
         db.collection("users").document(myUid).get()
                 .addOnSuccessListener(snap -> {
-                    // IMPORTANT: use userType (same as CreateComplaint & PMAccSetup)
                     myRole = snap.getString("userType");
                     if (myRole == null) myRole = "renter";
-                    loadComplaint();
+                    loadFix();
                 })
                 .addOnFailureListener(e -> {
                     myRole = "renter";
-                    loadComplaint();
+                    loadFix();
                 });
     }
 
-    private void loadComplaint() {
-        DocumentReference ref = db.collection("complaints").document(complaintId);
-        ref.get().addOnSuccessListener(doc -> {
-            if (!doc.exists()) {
-                Toast.makeText(this, "Complaint not found", Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
-            complaint = doc.toObject(Complaint.class);
-            if (complaint == null) {
-                finish();
-                return;
-            }
-            complaint.id = doc.getId();
+    private void loadFix() {
+        db.collection("fixRequests").document(fixId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) { finish(); return; }
+                    fix = doc.toObject(FixRequest.class);
+                    if (fix == null) { finish(); return; }
+                    fix.id = doc.getId();
 
-            // derive shortId if missing
-            if ((complaint.shortId == null || complaint.shortId.isEmpty())
-                    && complaint.id != null && complaint.id.length() >= 6) {
-                complaint.shortId = complaint.id.substring(0, 6).toUpperCase(Locale.US);
-            }
-            bindDataToUI();
-
-        }).addOnFailureListener(e -> {
-            Toast.makeText(this, "Failed to load complaint", Toast.LENGTH_SHORT).show();
-            finish();
-        });
+                    if ((fix.shortId == null || fix.shortId.isEmpty())
+                            && fix.id != null && fix.id.length() >= 6) {
+                        fix.shortId = fix.id.substring(0, 6).toUpperCase(Locale.US);
+                    }
+                    bindDataToUI();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load", Toast.LENGTH_SHORT).show();
+                    finish();
+                });
     }
 
     private void bindDataToUI() {
-        tvTitle.setText("Complain #" + (complaint.shortId != null ? complaint.shortId : "—"));
-        tvCreatedBy.setText(complaint.createdByName != null ? complaint.createdByName : "—");
-        tvRoomChip.setText(complaint.roomNumber != null ? complaint.roomNumber : "—");
-        tvDate.setText(complaint.createdDate != null ? complaint.createdDate : "—");
-        tvDesc.setText(complaint.description != null ? complaint.description : "—");
-        tvProperty.setText(complaint.propertyAddress != null ? complaint.propertyAddress : "—");
+        tvTitle.setText("Fix Request #" + (fix.shortId != null ? fix.shortId : "—"));
+        tvCreatedBy.setText(fix.createdByName != null ? fix.createdByName : "—");
+        tvRoomChip.setText(fix.roomNumber != null ? fix.roomNumber : "—");
+        tvDate.setText(fix.createdDate != null ? fix.createdDate : "—");
+        tvDesc.setText(fix.description != null ? fix.description : "—");
+        tvProperty.setText(fix.propertyAddress != null ? fix.propertyAddress : "—");
 
-        // reflect status on the button
-        String status = complaint.status != null ? complaint.status : "open";
-        btnStatus.setText("Status  ▾   " + status);
+        btnStatus.setText("Status  ▾   " + (fix.status != null ? fix.status : "open"));
 
-        // non-managers can't change status
         if (!"manager".equalsIgnoreCase(myRole)) {
             btnStatus.setEnabled(false);
             btnStatus.setAlpha(0.85f);
-        } else {
-            btnStatus.setEnabled(true);
-            btnStatus.setAlpha(1f);
         }
 
-        // Show complaint image if available and ImageView exists in layout
-        if (ivComplaintImage != null) {
-            if (!TextUtils.isEmpty(complaint.imageUrl)) {
-                ivComplaintImage.setVisibility(View.VISIBLE);
-                Glide.with(this)
-                        .load(complaint.imageUrl)
-                        .centerCrop()
-                        .into(ivComplaintImage);
-            } else {
-                ivComplaintImage.setVisibility(View.GONE);
-            }
+        if (fix.imageUrl != null && !fix.imageUrl.isEmpty()) {
+            ivComplaintImage.setVisibility(View.VISIBLE);
+            Glide.with(this)
+                    .load(fix.imageUrl)
+                    .into(ivComplaintImage);
+
+            ivComplaintImage.setOnClickListener(v -> {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(fix.imageUrl));
+                    startActivity(intent);
+                } catch (Exception ignored) {}
+            });
+        } else {
+            ivComplaintImage.setVisibility(View.GONE);
         }
     }
 
     private void updateStatus(String newStatus) {
-        if (complaint == null) return;
+        if (fix == null) return;
 
-        db.collection("complaints").document(complaint.id)
+        db.collection("fixRequests").document(fix.id)
                 .update("status", newStatus)
                 .addOnSuccessListener(unused -> {
-                    complaint.status = newStatus;
+                    fix.status = newStatus;
                     btnStatus.setText("Status  ▾   " + newStatus);
                     Toast.makeText(this, "Status updated", Toast.LENGTH_SHORT).show();
                 })
@@ -215,13 +200,11 @@ public class ComplaintDetailActivity extends AppCompatActivity {
                 );
     }
 
-    private void deleteComplaint() {
-        if (complaint == null) return;
-
-        db.collection("complaints").document(complaint.id)
+    private void deleteFix() {
+        db.collection("fixRequests").document(fix.id)
                 .delete()
                 .addOnSuccessListener(unused -> {
-                    Toast.makeText(this, "Complaint deleted", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Fix request deleted", Toast.LENGTH_SHORT).show();
                     finish();
                 })
                 .addOnFailureListener(e ->

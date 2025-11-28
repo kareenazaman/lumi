@@ -1,14 +1,15 @@
+// app/src/main/java/com/example/lumiapp/FixRequest.java
 package com.example.lumiapp;
 
 import com.google.firebase.Timestamp;
 
-public class Complaint {
+public class FixRequest {
     public String id;             // Firestore doc id
     public String shortId;        // first 6 chars (computed)
     public String createdById;
     public String createdByName;
     public String createdByRole;  // "renter" | "manager"
-    public String roomNumber;     // "Property Manager" for manager-created
+    public String roomNumber;     // room/unit #
     public String propertyId;
     public String propertyAddress;
     public String status;         // "open" | "pending" | "closed"
@@ -16,10 +17,10 @@ public class Complaint {
     public Timestamp createdAt;
     public String description;
 
-    // 🔹 NEW: image URL for the complaint photo
+    // Image of the issue
     public String imageUrl;
 
-    public Complaint() {
-        // Firestore needs empty ctor
+    public FixRequest() {
+        // Firestore needs empty constructor
     }
 }
