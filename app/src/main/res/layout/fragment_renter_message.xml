@@ -12,19 +12,20 @@
         android:id="@+id/tvMsgTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
         android:text="Messages and Help"
+        android:textColor="@color/brand_primary"
         android:textSize="22sp"
         android:textStyle="bold"
-        android:textColor="@color/brand_primary"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tvMsgSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="Need to contact your property manager or check complaints?"
+        android:text="Need to contact your property manager?"
         android:textSize="13sp"
         android:textColor="#555555"
         app:layout_constraintTop_toBottomOf="@id/tvMsgTitle"
@@ -48,19 +49,20 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- NEW: direct chat entry for renter -->
+            <Button
+                android:id="@+id/btnMessageManager"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Message Property Manager"
+                android:textAllCaps="false" />
+
             <Button
                 android:id="@+id/btnOpenContacts"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Open Contacts"
-                android:textAllCaps="false" />
-
-            <Button
-                android:id="@+id/btnOpenComplaints"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="View Complaints"
+                android:text="Open Contacts"
                 android:textAllCaps="false" />
 
         </LinearLayout>

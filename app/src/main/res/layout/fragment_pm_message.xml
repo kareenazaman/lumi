@@ -1,6 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/pmMessageRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F3F6F5"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/tvMsgTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="40dp"
+        android:text="Messages"
+        android:textColor="@color/brand_primary"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvMsgSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="4dp"
+        android:text="Chats with your renters and saved contacts."
+        android:textColor="#555555"
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvMsgTitle" />
+
+    <!-- Empty state text (shown only when no conversations yet) -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOpenContacts"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginRight="8dp"
+        android:text="Open Contacts"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        app:backgroundTint="@color/brand_primary"
+        app:cornerRadius="24dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvMsgSubtitle" />
+
+    <TextView
+        android:id="@+id/tvEmptyState"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:text="No conversations yet.\nStart a chat from your Contacts."
+        android:textAlignment="center"
+        android:gravity="center"
+        android:textSize="14sp"
+        android:textColor="#888888"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tvMsgSubtitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Conversation tiles -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvConversations"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnOpenContacts" />
+
+    <!-- Button → open contacts to start a new chat -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

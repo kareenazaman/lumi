@@ -14,6 +14,8 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -30,6 +32,7 @@ public class AddContactActivity extends AppCompatActivity {
     private ImageButton backBtn;
 
     private FirebaseFirestore db;
+    private FirebaseAuth auth;
 
     private final ArrayList<String> propertyNames = new ArrayList<>();
     private ArrayAdapter<String> propertyAdapter;
@@ -39,7 +42,8 @@ public class AddContactActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_contact);
 
-        db = FirebaseFirestore.getInstance();
+        db   = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
 
         initViews();
         setupPropertyDropdown();
@@ -47,13 +51,13 @@ public class AddContactActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        backBtn = findViewById(R.id.back_btn);
-        etName = findViewById(R.id.etName);
-        etPhone = findViewById(R.id.etPhone);
-        etEmail = findViewById(R.id.etEmail);
+        backBtn     = findViewById(R.id.back_btn);
+        etName      = findViewById(R.id.etName);
+        etPhone     = findViewById(R.id.etPhone);
+        etEmail     = findViewById(R.id.etEmail);
         tilProperty = findViewById(R.id.tilProperty);
         actProperty = findViewById(R.id.actProperty);
-        btnSave = findViewById(R.id.btnSave);
+        btnSave     = findViewById(R.id.btnSave);
 
         actProperty.setOnClickListener(v -> actProperty.showDropDown());
     }
@@ -93,14 +97,22 @@ public class AddContactActivity extends AppCompatActivity {
 
     private void setupListeners() {
         backBtn.setOnClickListener(v -> finish());
-
         btnSave.setOnClickListener(v -> saveContact());
     }
 
     private void saveContact() {
-        String name = etName.getText() != null ? etName.getText().toString().trim() : "";
-        String phone = etPhone.getText() != null ? etPhone.getText().toString().trim() : "";
-        String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
+        // Make sure we have a logged-in manager
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            Toast.makeText(this, "You must be logged in to add a contact.",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        String currentUserId = user.getUid();
+
+        String name     = etName.getText() != null ? etName.getText().toString().trim() : "";
+        String phone    = etPhone.getText() != null ? etPhone.getText().toString().trim() : "";
+        String email    = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
         String property = actProperty.getText() != null ? actProperty.getText().toString().trim() : "";
 
         if (TextUtils.isEmpty(name)) {
@@ -116,6 +128,9 @@ public class AddContactActivity extends AppCompatActivity {
         data.put("propertyName", property);
         data.put("createdAt", Timestamp.now());
         data.put("isCustom", true);
+
+        // 🔹 IMPORTANT: mark who created this contact
+        data.put("createdById", currentUserId);
 
         btnSave.setEnabled(false);
 

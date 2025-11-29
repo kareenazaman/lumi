@@ -42,12 +42,12 @@ public class ContactList extends AppCompatActivity {
     private FloatingActionButton fabAdd;
 
     private String userId;
-    // Comes from users/{uid}.userType → "manager" or "renter"
+    // From users/{uid}.userType → "manager" or "renter"
     private String role;
 
     // contacts collection docs
     private final List<Contact> customContacts = new ArrayList<>();
-    // renters (from users collection) – only used for managers
+    // renters (from renters + users)
     private final List<Contact> renterContacts = new ArrayList<>();
 
     @Override
@@ -161,8 +161,7 @@ public class ContactList extends AppCompatActivity {
         customContacts.clear();
         renterContacts.clear();
 
-        // 1) Load ALL contacts from contacts collection
-        //    Managers created these, renters are allowed to see them.
+        // 1) Load ALL contacts from contacts collection (no owner filter)
         db.collection("contacts")
                 .orderBy("createdAt", Query.Direction.DESCENDING)
                 .get()
@@ -174,69 +173,77 @@ public class ContactList extends AppCompatActivity {
                         String email        = doc.getString("email");
                         String propertyName = doc.getString("propertyName");
 
-                        // isCustom is always true for contacts collection docs
                         Contact c = new Contact(id, name, phone, email, propertyName, true);
                         customContacts.add(c);
                     }
 
-                    if (isManager()) {
-                        // 2) Property Manager → also load renters of their active property
-                        loadRenterContactsForActiveProperty();
-                    } else {
-                        // 2) Renter → no renterContacts needed, just show contacts
-                        applySearch();
-                    }
+                    // 2) Load ALL renters (for both manager & renter view)
+                    loadAllRenters();
                 })
-                .addOnFailureListener(e ->
-                        Log.e(TAG, "Failed to load contacts", e));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to load contacts", e);
+                    // Even if contact load fails, still try renters
+                    loadAllRenters();
+                });
     }
 
     /**
-     * Property manager:
-     *   users/{uid}.activePropertyId → renters with that propertyId.
-     *   If activePropertyId is missing, fallback to all renters.
+     * Load ALL renters (no activeProperty filter) and join with users collection
+     * Grouped later by propertyName only (no room number).
      */
-    private void loadRenterContactsForActiveProperty() {
-        db.collection("users").document(userId).get()
-                .addOnSuccessListener(userSnap -> {
-                    String activePropertyId = null;
-                    if (userSnap != null && userSnap.exists()) {
-                        activePropertyId = userSnap.getString("activePropertyId");
+    private void loadAllRenters() {
+        db.collection("renters")
+                .get()
+                .addOnSuccessListener(renterQs -> {
+                    renterContacts.clear();
+
+                    if (renterQs.isEmpty()) {
+                        applySearch();
+                        return;
                     }
 
-                    Query q = db.collection("users")
-                            .whereEqualTo("userType", "renter");
+                    final int total = renterQs.size();
+                    final int[] done = {0};
 
-                    if (!TextUtils.isEmpty(activePropertyId)) {
-                        q = q.whereEqualTo("propertyId", activePropertyId);
-                    }
+                    for (QueryDocumentSnapshot renterDoc : renterQs) {
+                        String renterUid    = renterDoc.getId();
 
-                    q.get()
-                            .addOnSuccessListener(querySnapshot -> {
-                                renterContacts.clear();
+                        // 🔹 Use ONLY propertyName (already "name - address" in your data)
+                        String propertyName = renterDoc.getString("propertyName");
+                        String finalPropertyName = propertyName;
 
-                                for (QueryDocumentSnapshot doc : querySnapshot) {
-                                    String id    = doc.getId();
-                                    String name  = doc.getString("name");
-                                    String phone = doc.getString("phone");
-                                    String email = doc.getString("email");
+                        db.collection("users").document(renterUid)
+                                .get()
+                                .addOnSuccessListener(userDoc -> {
+                                    if (userDoc != null && userDoc.exists()) {
+                                        String name  = userDoc.getString("name");
+                                        String phone = userDoc.getString("phone");
+                                        String email = userDoc.getString("email");
 
-                                    String propertyName = doc.getString("propertyName");
-                                    if (propertyName == null || propertyName.trim().isEmpty()) {
-                                        propertyName = doc.getString("propertyAddress");
+                                        Contact c = new Contact(
+                                                renterUid,
+                                                name,
+                                                phone,
+                                                email,
+                                                finalPropertyName, // ✅ no room added here
+                                                false              // renter contact
+                                        );
+                                        renterContacts.add(c);
                                     }
-
-                                    Contact c = new Contact(id, name, phone, email, propertyName, false);
-                                    renterContacts.add(c);
-                                }
-
-                                applySearch();
-                            })
-                            .addOnFailureListener(e ->
-                                    Log.e(TAG, "Failed to load renter contacts", e));
+                                })
+                                .addOnCompleteListener(t -> {
+                                    done[0]++;
+                                    if (done[0] == total) {
+                                        // All renters processed → update UI
+                                        applySearch();
+                                    }
+                                });
+                    }
                 })
-                .addOnFailureListener(e ->
-                        Log.e(TAG, "Failed to load manager user doc", e));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to load renters", e);
+                    applySearch();
+                });
     }
 
     // ================== LIST BUILD + SEARCH ==================
@@ -252,13 +259,13 @@ public class ContactList extends AppCompatActivity {
             }
         }
 
-        // Group renters by property name – only for managers
+        // Group renters by property name
         Map<String, List<Contact>> byProperty =
                 new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         for (Contact c : renters) {
             String key = c.getPropertyName();
-            if (key == null || key.trim().isEmpty()) key = "Other";
+            if (key == null || key.trim().isEmpty()) key = "Renters";
             if (!byProperty.containsKey(key)) {
                 byProperty.put(key, new ArrayList<>());
             }

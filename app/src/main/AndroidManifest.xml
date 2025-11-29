@@ -16,6 +16,12 @@
         android:theme="@style/Theme.LumiApp"
         tools:targetApi="31">
         <activity
+            android:name=".ManagerMessagesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false" />
+        <activity
             android:name=".RenterDashboardContainer"
             android:exported="false" />
         <activity
@@ -75,6 +81,8 @@
         <activity
             android:name=".ComplaintDetailActivity"
             android:exported="false" />
+        <activity android:name=".LoginActivity"
+            android:exported="false"/>
     </application>
 
 </manifest>
